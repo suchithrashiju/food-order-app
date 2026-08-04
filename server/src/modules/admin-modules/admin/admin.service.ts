@@ -12,6 +12,61 @@ const DEFAULT_ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_EMAIL = 'admin@2026';
 const DEFAULT_ADMIN_PASSWORD = 'admin@2026';
 const BCRYPT_SALT_ROUNDS = 10;
+const ADMIN_CONFIG_KEY = 'ADMINCONFIG';
+const ADDED_MENU_ITEMS_CONFIG_KEY = 'ADDED_MENU_ITEMS';
+
+const BASIC_MENU_ITEMS = [
+  {
+    name: 'Classic Burger',
+    description: 'Juicy beef burger with lettuce, tomato, cheese, and house sauce.',
+    price: 12.5,
+    category: 'Burgers',
+    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80',
+    isAvailable: true,
+    isDeleted: false,
+    createdBy: DEFAULT_ADMIN_USERNAME,
+  },
+  {
+    name: 'Margherita Pizza',
+    description: 'Traditional pizza with tomato sauce, mozzarella, and basil.',
+    price: 14,
+    category: 'Pizza',
+    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80',
+    isAvailable: true,
+    isDeleted: false,
+    createdBy: DEFAULT_ADMIN_USERNAME,
+  },
+  {
+    name: 'Chicken Caesar Wrap',
+    description: 'Grilled chicken wrapped with romaine, parmesan, and Caesar dressing.',
+    price: 10.75,
+    category: 'Wraps',
+    imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80',
+    isAvailable: true,
+    isDeleted: false,
+    createdBy: DEFAULT_ADMIN_USERNAME,
+  },
+  {
+    name: 'Veggie Salad',
+    description: 'Fresh salad with mixed greens, avocado, and roasted vegetables.',
+    price: 8.25,
+    category: 'Salads',
+    imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80',
+    isAvailable: true,
+    isDeleted: false,
+    createdBy: DEFAULT_ADMIN_USERNAME,
+  },
+  {
+    name: 'Chocolate Lava Cake',
+    description: 'Warm chocolate cake with a molten center and rich cocoa flavor.',
+    price: 6.75,
+    category: 'Desserts',
+    imageUrl: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?auto=format&fit=crop&w=900&q=80',
+    isAvailable: true,
+    isDeleted: false,
+    createdBy: DEFAULT_ADMIN_USERNAME,
+  },
+] as const;
 
 interface AdminTokenPayload {
   username: string;
@@ -24,6 +79,8 @@ interface AdminSeedResponse {
   data: {
     adminSeeded: boolean;
     systemConfigSeeded: boolean;
+    menuItemsSeeded: boolean;
+    menuItemsAdded: number;
   };
 }
 
@@ -57,6 +114,8 @@ export class AdminService {
   private readonly inMemoryAdminSeed = {
     adminSeeded: false,
     systemConfigSeeded: false,
+    menuItemsSeeded: false,
+    menuItemsAdded: 0,
   };
   private inMemoryAdminPasswordHash?: string;
 
@@ -113,23 +172,33 @@ export class AdminService {
 
   async seedAdminSetup(): Promise<AdminSeedResponse> {
     if (!this.isMongoConnected()) {
+      const menuItemsSeeded = !this.inMemoryAdminSeed.menuItemsSeeded;
+      const menuItemsAdded = menuItemsSeeded ? BASIC_MENU_ITEMS.length : 0;
+
       this.inMemoryAdminSeed.adminSeeded = true;
       this.inMemoryAdminSeed.systemConfigSeeded = true;
+      this.inMemoryAdminSeed.menuItemsSeeded = true;
+      this.inMemoryAdminSeed.menuItemsAdded += menuItemsAdded;
 
       return {
         success: true,
         data: {
           adminSeeded: true,
           systemConfigSeeded: true,
+          menuItemsSeeded,
+          menuItemsAdded,
         },
       };
     }
 
-    const existingAdmin = await User.findOne({ username: 'admin' }).lean().exec();
-    const existingConfig = await SystemConfig.findOne({ key: 'ADMINCONFIG' }).lean().exec();
+    const existingAdmin = await User.findOne({ username: DEFAULT_ADMIN_USERNAME }).lean().exec();
+    const existingConfig = await SystemConfig.findOne({ key: ADMIN_CONFIG_KEY }).lean().exec();
+    const existingMenuItemsConfig = await SystemConfig.findOne({ key: ADDED_MENU_ITEMS_CONFIG_KEY }).lean().exec();
 
     let adminSeeded = false;
     let systemConfigSeeded = false;
+    let menuItemsSeeded = false;
+    let menuItemsAdded = 0;
 
     if (!existingAdmin) {
       await User.create({
@@ -149,11 +218,23 @@ export class AdminService {
 
     if (!existingConfig) {
       await SystemConfig.create({
-        key: 'ADMINCONFIG',
+        key: ADMIN_CONFIG_KEY,
         value: 'seeded',
         description: 'System configuration seeded for admin dashboard bootstrap',
       });
       systemConfigSeeded = true;
+    }
+
+    if (!existingMenuItemsConfig) {
+      const insertedMenuItems = await MenuItem.insertMany(BASIC_MENU_ITEMS);
+      menuItemsSeeded = true;
+      menuItemsAdded = insertedMenuItems.length;
+
+      await SystemConfig.create({
+        key: ADDED_MENU_ITEMS_CONFIG_KEY,
+        value: 'seeded',
+        description: 'Basic menu items seeded once for the admin menu catalog',
+      });
     }
 
     return {
@@ -161,6 +242,8 @@ export class AdminService {
       data: {
         adminSeeded,
         systemConfigSeeded,
+        menuItemsSeeded,
+        menuItemsAdded,
       },
     };
   }
@@ -176,7 +259,11 @@ export class AdminService {
           customersCount: 0,
           systemConfig: [
             {
-              key: 'ADMINCONFIG',
+              key: ADMIN_CONFIG_KEY,
+              value: 'seeded',
+            },
+            {
+              key: ADDED_MENU_ITEMS_CONFIG_KEY,
               value: 'seeded',
             },
           ],

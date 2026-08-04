@@ -27,6 +27,8 @@ test('POST /api/admin/seed provisions the admin user and system config', async (
   assert.equal(response.body.success, true);
   assert.equal(response.body.data.adminSeeded, true);
   assert.equal(response.body.data.systemConfigSeeded, true);
+  assert.equal(typeof response.body.data.menuItemsSeeded, 'boolean');
+  assert.equal(typeof response.body.data.menuItemsAdded, 'number');
 });
 
 test('POST /api/admin/login authenticates the seeded admin', async () => {
