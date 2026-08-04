@@ -43,6 +43,7 @@ test('admin menu-items CRUD flow works', async () => {
     .set('Authorization', `Bearer ${token}`)
     .expect(200);
   assert.ok(Array.isArray(listResponse.body.data));
+  assert.ok(listResponse.body.count >= 1);
 
   const updateResponse = await request(app)
     .patch(`/api/admin/menu-items/${id}`)
@@ -96,6 +97,42 @@ test('admin menu-items requires an admin token', async () => {
       category: 'Admin',
     })
     .expect(401);
+
+  assert.equal(response.body.success, false);
+});
+
+test('admin menu-items returns 404 for unknown item', async () => {
+  const token = await getAdminToken();
+
+  const response = await request(app)
+    .patch('/api/admin/menu-items/non-existent-item-id')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'Does Not Exist' })
+    .expect(404);
+
+  assert.equal(response.body.success, false);
+  assert.match(response.body.message, /not found/i);
+});
+
+test('admin menu-items rejects empty update payload', async () => {
+  const token = await getAdminToken();
+
+  const createResponse = await request(app)
+    .post('/api/admin/menu-items')
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+      name: 'Temp Item',
+      description: 'Temporary item for empty update test',
+      price: 4.5,
+      category: 'Admin',
+    })
+    .expect(201);
+
+  const response = await request(app)
+    .patch(`/api/admin/menu-items/${createResponse.body.data.id}`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({})
+    .expect(400);
 
   assert.equal(response.body.success, false);
 });

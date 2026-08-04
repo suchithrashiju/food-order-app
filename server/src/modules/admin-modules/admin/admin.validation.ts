@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-export const seedAdminSchema = z.object({}).strict();
+export const seedAdminSchema = z
+  .object({
+    seedSecret: z.string().trim().min(1).optional(),
+  })
+  .strict();
 
 export const adminLoginSchema = z
   .object({
@@ -10,3 +14,4 @@ export const adminLoginSchema = z
   .strict();
 
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+export type SeedAdminInput = z.infer<typeof seedAdminSchema>;

@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test src/tests/*.test.ts"
   },
   "keywords": [],
@@ -35,6 +36,7 @@
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
+    "tsc-alias": "^1.9.1",
     "tsx": "^4.23.5",
     "typescript": "^5.9.3"
   }

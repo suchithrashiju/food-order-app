@@ -16,7 +16,16 @@ export class AdminController {
 
   async seed(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      seedAdminSchema.parse(req.body ?? {});
+      const headerSecret = req.headers['x-seed-secret'];
+      const bodyInput = seedAdminSchema.parse(req.body ?? {});
+      const seedSecret = typeof headerSecret === 'string' && headerSecret.trim() !== ''
+        ? headerSecret.trim()
+        : bodyInput.seedSecret;
+
+      adminService.assertSeedAccess({
+        ...(seedSecret ? { seedSecret } : {}),
+      });
+
       const response = await adminService.seedAdminSetup();
       res.status(200).json(response);
     } catch (error) {

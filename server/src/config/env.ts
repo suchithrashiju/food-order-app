@@ -10,6 +10,10 @@ interface EnvConfig {
   corsOrigin: string;
   adminJwtSecret: string;
   adminJwtExpiresInSeconds: number;
+  adminUsername: string;
+  adminEmail: string;
+  adminPassword: string;
+  seedSecret?: string;
 }
 
 function getEnvValue(key: string, fallback?: string): string {
@@ -26,6 +30,16 @@ function getEnvValue(key: string, fallback?: string): string {
   throw new Error(`Missing required environment variable: ${key}`);
 }
 
+function getOptionalEnvValue(key: string): string | undefined {
+  const value = process.env[key];
+
+  if (value && value.trim() !== '') {
+    return value.trim();
+  }
+
+  return undefined;
+}
+
 function getNumericEnvValue(key: string, fallback: number): number {
   const value = getEnvValue(key, String(fallback));
   const parsed = parseInt(value, 10);
@@ -37,6 +51,8 @@ function getNumericEnvValue(key: string, fallback: number): number {
   return parsed;
 }
 
+const seedSecret = getOptionalEnvValue('SEED_SECRET');
+
 export const env: EnvConfig = {
   nodeEnv: getEnvValue('NODE_ENV', 'development'),
   port: getNumericEnvValue('PORT', 3000),
@@ -45,6 +61,11 @@ export const env: EnvConfig = {
   corsOrigin: getEnvValue('CORS_ORIGIN', 'http://localhost:5173'),
   adminJwtSecret: getEnvValue('ADMIN_JWT_SECRET', 'change-this-admin-jwt-secret'),
   adminJwtExpiresInSeconds: getNumericEnvValue('ADMIN_JWT_EXPIRES_IN_SECONDS', 28800),
+  adminUsername: getEnvValue('ADMIN_USERNAME', 'admin'),
+  adminEmail: getEnvValue('ADMIN_EMAIL', 'admin@foodorder.local'),
+  adminPassword: getEnvValue('ADMIN_PASSWORD', 'admin@2026'),
+  ...(seedSecret ? { seedSecret } : {}),
 };
 
 export const isDevelopment = env.nodeEnv === 'development';
+export const isProduction = env.nodeEnv === 'production';

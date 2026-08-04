@@ -1,5 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { ZodError } from 'zod';
+
+import { HttpError } from '@src/utils/httpError';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -20,6 +23,24 @@ export function errorMiddleware(
         path: issue.path.join('.'),
         message: issue.message,
       })),
+    });
+    return;
+  }
+
+  if (err instanceof mongoose.Error.CastError) {
+    res.status(400).json({
+      success: false,
+      message: `Invalid ${err.path || 'id'} format`,
+    });
+    return;
+  }
+
+  if (err instanceof HttpError) {
+    res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      ...(err.details !== undefined ? { details: err.details } : {}),
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
     });
     return;
   }

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { adminService } from '@src/modules/admin-modules/admin/admin.service';
+import { unauthorized } from '@src/utils/httpError';
 
 export interface AdminRequest extends Request {
   adminUser?: string;
@@ -11,12 +12,15 @@ export function adminAuthMiddleware(req: AdminRequest, _res: Response, next: Nex
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith('Bearer ')) {
-      const error = new Error('Admin authorization token is required') as Error & { statusCode?: number };
-      error.statusCode = 401;
-      throw error;
+      throw unauthorized('Admin authorization token is required');
     }
 
     const token = authHeader.slice('Bearer '.length).trim();
+
+    if (!token) {
+      throw unauthorized('Admin authorization token is required');
+    }
+
     const payload = adminService.verifyToken(token);
     req.adminUser = payload.username;
     next();

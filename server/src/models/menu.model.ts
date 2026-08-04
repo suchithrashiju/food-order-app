@@ -31,10 +31,13 @@ const menuItemSchema = new Schema<IMenuItem>(
     createdBy: { type: String, trim: true },
     updatedBy: { type: String, trim: true },
     deletedBy: { type: String, trim: true },
+    deletedAt: { type: Date },
   },
   {
     timestamps: true,
   },
 );
+
+menuItemSchema.index({ isDeleted: 1, category: 1, name: 1 });
 
 export const MenuItem: Model<IMenuItem> = mongoose.model<IMenuItem>('MenuItem', menuItemSchema);

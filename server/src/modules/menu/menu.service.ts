@@ -5,6 +5,7 @@ import type {
   MenuItemResponse,
   MenuItemsResponse,
 } from '@src/modules/menu/menu.validation';
+import { notFound } from '@src/utils/httpError';
 
 export class MenuService {
   async getMenuItems(query: GetMenuItemsQuery): Promise<MenuItemsResponse> {
@@ -28,7 +29,7 @@ export class MenuService {
     const item = await menuRepository.findById(id);
 
     if (!item) {
-      throw this.createNotFoundError(id);
+      throw notFound(`Menu item with id ${id} was not found`);
     }
 
     return {
@@ -52,12 +53,6 @@ export class MenuService {
     }
 
     return response;
-  }
-
-  private createNotFoundError(id: string): Error & { statusCode?: number } {
-    const error = new Error(`Menu item with id ${id} was not found`) as Error & { statusCode?: number };
-    error.statusCode = 404;
-    return error;
   }
 }
 

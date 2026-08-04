@@ -31,6 +31,25 @@ test('POST /api/admin/seed provisions the admin user and system config', async (
   assert.equal(typeof response.body.data.menuItemsAdded, 'number');
 });
 
+test('POST /api/admin/seed populates menu items for admin listing', async () => {
+  await request(app).post('/api/admin/seed').expect(200);
+
+  const loginResponse = await request(app)
+    .post('/api/admin/login')
+    .send({
+      username: 'admin',
+      password: 'admin@2026',
+    })
+    .expect(200);
+
+  const listResponse = await request(app)
+    .get('/api/admin/menu-items')
+    .set('Authorization', `Bearer ${loginResponse.body.data.token}`)
+    .expect(200);
+
+  assert.ok(listResponse.body.count > 0);
+});
+
 test('POST /api/admin/login authenticates the seeded admin', async () => {
   await request(app).post('/api/admin/seed').expect(200);
 

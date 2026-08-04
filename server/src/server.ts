@@ -47,6 +47,15 @@ async function startServer(): Promise<void> {
   try {
     await connectDatabase();
 
+    const { adminService } = await import('@src/modules/admin-modules/admin/admin.service');
+
+    try {
+      const seedResult = await adminService.seedAdminSetup();
+      console.log('Bootstrap seed completed:', seedResult.data);
+    } catch (seedError) {
+      console.warn('Bootstrap seed skipped or failed:', seedError);
+    }
+
     const server = http.createServer(app);
     const io = createSocketServer(server);
     const port = await getAvailablePort(env.port);

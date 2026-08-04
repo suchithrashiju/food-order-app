@@ -1,6 +1,20 @@
+import dns from 'dns';
+
 import mongoose from 'mongoose';
 
 import { env } from '@src/config/env';
+
+/**
+ * Some ISP DNS resolvers refuse Node's SRV lookups for mongodb+srv URIs
+ * (querySrv ECONNREFUSED). Prefer public resolvers when using SRV.
+ */
+function ensureSrvDnsResolvers(mongoUri: string): void {
+  if (!mongoUri.startsWith('mongodb+srv://')) {
+    return;
+  }
+
+  dns.setServers(['8.8.8.8', '1.1.1.1', ...dns.getServers()]);
+}
 
 export async function connectDatabase(): Promise<void> {
   if (mongoose.connection.readyState >= 1) {
@@ -10,6 +24,7 @@ export async function connectDatabase(): Promise<void> {
 
   try {
     mongoose.set('strictQuery', true);
+    ensureSrvDnsResolvers(env.mongoUri);
 
     console.log('Connecting to MongoDB...');
 

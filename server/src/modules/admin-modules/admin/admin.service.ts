@@ -2,71 +2,19 @@ import bcrypt from 'bcrypt';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
-import { env } from '@src/config/env';
+import { env, isProduction } from '@src/config/env';
+import { SEED_MENU_ITEMS } from '@src/data/menu.seed';
 import { MenuItem } from '@src/models/menu.model';
 import { SystemConfig } from '@src/models/systemConfig.model';
 import { User } from '@src/models/user.model';
-import type { AdminLoginInput } from '@src/modules/admin-modules/admin/admin.validation';
+import type { AdminLoginInput, SeedAdminInput } from '@src/modules/admin-modules/admin/admin.validation';
+import { menuItemsService } from '@src/modules/admin-modules/menu-items/menuItems.service';
+import { menuRepository } from '@src/modules/menu/menu.repository';
+import { forbidden, unauthorized } from '@src/utils/httpError';
 
-const DEFAULT_ADMIN_USERNAME = 'admin';
-const DEFAULT_ADMIN_EMAIL = 'admin@2026';
-const DEFAULT_ADMIN_PASSWORD = 'admin@2026';
 const BCRYPT_SALT_ROUNDS = 10;
 const ADMIN_CONFIG_KEY = 'ADMINCONFIG';
 const ADDED_MENU_ITEMS_CONFIG_KEY = 'ADDED_MENU_ITEMS';
-
-const BASIC_MENU_ITEMS = [
-  {
-    name: 'Classic Burger',
-    description: 'Juicy beef burger with lettuce, tomato, cheese, and house sauce.',
-    price: 12.5,
-    category: 'Burgers',
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80',
-    isAvailable: true,
-    isDeleted: false,
-    createdBy: DEFAULT_ADMIN_USERNAME,
-  },
-  {
-    name: 'Margherita Pizza',
-    description: 'Traditional pizza with tomato sauce, mozzarella, and basil.',
-    price: 14,
-    category: 'Pizza',
-    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80',
-    isAvailable: true,
-    isDeleted: false,
-    createdBy: DEFAULT_ADMIN_USERNAME,
-  },
-  {
-    name: 'Chicken Caesar Wrap',
-    description: 'Grilled chicken wrapped with romaine, parmesan, and Caesar dressing.',
-    price: 10.75,
-    category: 'Wraps',
-    imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80',
-    isAvailable: true,
-    isDeleted: false,
-    createdBy: DEFAULT_ADMIN_USERNAME,
-  },
-  {
-    name: 'Veggie Salad',
-    description: 'Fresh salad with mixed greens, avocado, and roasted vegetables.',
-    price: 8.25,
-    category: 'Salads',
-    imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80',
-    isAvailable: true,
-    isDeleted: false,
-    createdBy: DEFAULT_ADMIN_USERNAME,
-  },
-  {
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with a molten center and rich cocoa flavor.',
-    price: 6.75,
-    category: 'Desserts',
-    imageUrl: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?auto=format&fit=crop&w=900&q=80',
-    isAvailable: true,
-    isDeleted: false,
-    createdBy: DEFAULT_ADMIN_USERNAME,
-  },
-] as const;
 
 interface AdminTokenPayload {
   username: string;
@@ -124,11 +72,11 @@ export class AdminService {
       const passwordHash = await this.getInMemoryAdminPasswordHash();
       const isPasswordValid = await bcrypt.compare(input.password, passwordHash);
 
-      if (input.username !== DEFAULT_ADMIN_USERNAME || !isPasswordValid) {
-        throw this.createUnauthorizedError('Invalid admin credentials');
+      if (input.username !== env.adminUsername || !isPasswordValid) {
+        throw unauthorized('Invalid admin credentials');
       }
 
-      return this.createLoginResponse(DEFAULT_ADMIN_USERNAME);
+      return this.createLoginResponse(env.adminUsername);
     }
 
     const admin = await User.findOne({
@@ -138,13 +86,13 @@ export class AdminService {
     }).lean().exec();
 
     if (!admin) {
-      throw this.createUnauthorizedError('Invalid admin credentials');
+      throw unauthorized('Invalid admin credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(input.password, admin.password);
 
     if (!isPasswordValid) {
-      throw this.createUnauthorizedError('Invalid admin credentials');
+      throw unauthorized('Invalid admin credentials');
     }
 
     return this.createLoginResponse(admin.username);
@@ -156,11 +104,11 @@ export class AdminService {
     try {
       decoded = jwt.verify(token, env.adminJwtSecret);
     } catch {
-      throw this.createUnauthorizedError('Invalid admin token');
+      throw unauthorized('Invalid admin token');
     }
 
     if (typeof decoded === 'string' || decoded.role !== 'admin' || typeof decoded.username !== 'string' || typeof decoded.exp !== 'number') {
-      throw this.createUnauthorizedError('Invalid admin token');
+      throw unauthorized('Invalid admin token');
     }
 
     return {
@@ -170,10 +118,29 @@ export class AdminService {
     };
   }
 
+  assertSeedAccess(input: SeedAdminInput): void {
+    if (env.seedSecret) {
+      if (input.seedSecret !== env.seedSecret) {
+        throw forbidden('Invalid seed secret');
+      }
+      return;
+    }
+
+    if (isProduction) {
+      throw forbidden('Seeding is disabled in production without SEED_SECRET');
+    }
+  }
+
   async seedAdminSetup(): Promise<AdminSeedResponse> {
     if (!this.isMongoConnected()) {
       const menuItemsSeeded = !this.inMemoryAdminSeed.menuItemsSeeded;
-      const menuItemsAdded = menuItemsSeeded ? BASIC_MENU_ITEMS.length : 0;
+      const menuItemsAdded = menuItemsSeeded
+        ? menuItemsService.seedInMemoryItems([...SEED_MENU_ITEMS])
+        : 0;
+
+      if (menuItemsSeeded) {
+        menuRepository.seedInMemoryItems([...SEED_MENU_ITEMS]);
+      }
 
       this.inMemoryAdminSeed.adminSeeded = true;
       this.inMemoryAdminSeed.systemConfigSeeded = true;
@@ -191,7 +158,7 @@ export class AdminService {
       };
     }
 
-    const existingAdmin = await User.findOne({ username: DEFAULT_ADMIN_USERNAME }).lean().exec();
+    const existingAdmin = await User.findOne({ username: env.adminUsername }).lean().exec();
     const existingConfig = await SystemConfig.findOne({ key: ADMIN_CONFIG_KEY }).lean().exec();
     const existingMenuItemsConfig = await SystemConfig.findOne({ key: ADDED_MENU_ITEMS_CONFIG_KEY }).lean().exec();
 
@@ -202,9 +169,9 @@ export class AdminService {
 
     if (!existingAdmin) {
       await User.create({
-        username: DEFAULT_ADMIN_USERNAME,
-        email: DEFAULT_ADMIN_EMAIL,
-        password: await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, BCRYPT_SALT_ROUNDS),
+        username: env.adminUsername,
+        email: env.adminEmail,
+        password: await bcrypt.hash(env.adminPassword, BCRYPT_SALT_ROUNDS),
         role: 'admin',
         isActive: true,
       });
@@ -212,7 +179,7 @@ export class AdminService {
     } else if (!this.isBcryptHash(existingAdmin.password)) {
       await User.updateOne(
         { _id: existingAdmin._id },
-        { password: await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, BCRYPT_SALT_ROUNDS) },
+        { password: await bcrypt.hash(env.adminPassword, BCRYPT_SALT_ROUNDS) },
       ).exec();
     }
 
@@ -226,9 +193,14 @@ export class AdminService {
     }
 
     if (!existingMenuItemsConfig) {
-      const insertedMenuItems = await MenuItem.insertMany(BASIC_MENU_ITEMS);
+      const existingMenuCount = await MenuItem.countDocuments({ isDeleted: false }).exec();
+
+      if (existingMenuCount === 0) {
+        const insertedMenuItems = await MenuItem.insertMany(SEED_MENU_ITEMS);
+        menuItemsAdded = insertedMenuItems.length;
+      }
+
       menuItemsSeeded = true;
-      menuItemsAdded = insertedMenuItems.length;
 
       await SystemConfig.create({
         key: ADDED_MENU_ITEMS_CONFIG_KEY,
@@ -254,7 +226,7 @@ export class AdminService {
         success: true,
         data: {
           adminSeeded: this.inMemoryAdminSeed.adminSeeded,
-          menuItemsCount: 0,
+          menuItemsCount: menuItemsService.getInMemoryActiveCount(),
           ordersCount: 0,
           customersCount: 0,
           systemConfig: [
@@ -272,16 +244,16 @@ export class AdminService {
     }
 
     const [menuItemsCount, customersCount, adminCount, systemConfigs] = await Promise.all([
-      MenuItem.countDocuments().exec(),
+      MenuItem.countDocuments({ isDeleted: false }).exec(),
       User.countDocuments({ role: 'customer' }).exec(),
-      User.countDocuments({ role: 'admin' }).exec(),
+      User.countDocuments({ role: 'admin', isActive: true }).exec(),
       SystemConfig.find({}).lean().exec(),
     ]);
 
     return {
       success: true,
       data: {
-        adminSeeded: true,
+        adminSeeded: adminCount > 0,
         menuItemsCount,
         ordersCount: 0,
         customersCount,
@@ -325,7 +297,7 @@ export class AdminService {
 
   private async getInMemoryAdminPasswordHash(): Promise<string> {
     if (!this.inMemoryAdminPasswordHash) {
-      this.inMemoryAdminPasswordHash = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, BCRYPT_SALT_ROUNDS);
+      this.inMemoryAdminPasswordHash = await bcrypt.hash(env.adminPassword, BCRYPT_SALT_ROUNDS);
     }
 
     return this.inMemoryAdminPasswordHash;
@@ -333,12 +305,6 @@ export class AdminService {
 
   private isBcryptHash(value: string): boolean {
     return /^\$2[aby]\$\d{2}\$/.test(value);
-  }
-
-  private createUnauthorizedError(message: string): Error & { statusCode?: number } {
-    const error = new Error(message) as Error & { statusCode?: number };
-    error.statusCode = 401;
-    return error;
   }
 }
 
