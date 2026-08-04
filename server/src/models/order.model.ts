@@ -22,10 +22,12 @@ export interface IDeliveryDetails {
   address: string;
   city: string;
   postalCode: string;
+  email?: string;
   notes?: string;
 }
 
 export interface IOrderBase {
+  orderReference: string;
   items: IOrderItem[];
   delivery: IDeliveryDetails;
   status: OrderStatus;
@@ -58,6 +60,7 @@ const deliverySchema = new Schema<IDeliveryDetails>(
     address: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     postalCode: { type: String, required: true, trim: true },
+    email: { type: String, trim: true, lowercase: true },
     notes: { type: String, trim: true },
   },
   { _id: false },
@@ -65,6 +68,7 @@ const deliverySchema = new Schema<IDeliveryDetails>(
 
 const orderSchema = new Schema<IOrder>(
   {
+    orderReference: { type: String, required: true, unique: true, trim: true, uppercase: true },
     items: { type: [orderItemSchema], required: true },
     delivery: { type: deliverySchema, required: true },
     status: {
@@ -83,5 +87,6 @@ const orderSchema = new Schema<IOrder>(
 
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ orderReference: 1 });
 
 export const Order: Model<IOrder> = mongoose.model<IOrder>('Order', orderSchema);

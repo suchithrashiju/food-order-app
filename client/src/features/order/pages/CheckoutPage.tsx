@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate } from 'react-router'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ import { useCart } from '@/features/cart/context/cart-context'
 import { getErrorMessage } from '@/lib/api-client'
 import { formatCurrency } from '@/lib/utils'
 import { orderService } from '@/services/order.service'
+import type { Order } from '@/types'
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, 'Name is required'),
@@ -22,6 +24,9 @@ const checkoutSchema = z.object({
     .trim()
     .min(8, 'Phone is required')
     .regex(/^[+0-9\s()-]+$/, 'Enter a valid phone number'),
+  email: z
+    .union([z.literal(''), z.string().trim().email('Enter a valid email address')])
+    .optional(),
   address: z.string().trim().min(5, 'Address is required'),
   city: z.string().trim().min(2, 'City is required'),
   postalCode: z.string().trim().min(3, 'Postal code is required'),
@@ -31,14 +36,15 @@ const checkoutSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
 
 export function CheckoutPage() {
-  const navigate = useNavigate()
   const { items, subtotal, deliveryFee, tax, total, clearCart } = useCart()
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null)
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       name: '',
       phone: '',
+      email: '',
       address: '',
       city: '',
       postalCode: '',
@@ -49,16 +55,31 @@ export function CheckoutPage() {
   const placeOrder = useMutation({
     mutationFn: orderService.createOrder,
     onSuccess: (order) => {
+      setPlacedOrder(order)
       clearCart()
-      navigate(`/orders/${order.id}/success`, { replace: true })
     },
   })
+
+  if (placedOrder) {
+    return (
+      <Navigate
+        to={`/orders/${placedOrder.id}/success`}
+        replace
+        state={{
+          orderReference: placedOrder.orderReference,
+          emailNotification: placedOrder.emailNotification,
+        }}
+      />
+    )
+  }
 
   if (items.length === 0) {
     return <Navigate to="/cart" replace />
   }
 
   const onSubmit = form.handleSubmit((values) => {
+    const email = values.email?.trim()
+
     placeOrder.mutate({
       items: items.map((entry) => ({
         menuItemId: entry.menuItem.id,
@@ -72,6 +93,7 @@ export function CheckoutPage() {
         address: values.address,
         city: values.city,
         postalCode: values.postalCode,
+        ...(email ? { email } : {}),
         ...(values.notes ? { notes: values.notes } : {}),
       },
     })
@@ -89,6 +111,7 @@ export function CheckoutPage() {
               [
                 ['name', 'Full name', 'text'],
                 ['phone', 'Phone number', 'tel'],
+                ['email', 'Email (optional)', 'email'],
                 ['address', 'Street address', 'text'],
                 ['city', 'City', 'text'],
                 ['postalCode', 'Postal code', 'text'],

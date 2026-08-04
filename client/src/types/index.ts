@@ -37,11 +37,19 @@ export interface DeliveryDetails {
   address: string
   city: string
   postalCode: string
+  email?: string
   notes?: string
+}
+
+export interface EmailNotification {
+  sent: boolean
+  skipped: boolean
+  message: string
 }
 
 export interface Order {
   id: string
+  orderReference: string
   items: OrderItem[]
   delivery: DeliveryDetails
   status: OrderStatus
@@ -52,6 +60,7 @@ export interface Order {
   estimatedDeliveryMinutes: number
   createdAt: string
   updatedAt: string
+  emailNotification?: EmailNotification
 }
 
 export interface CreateOrderPayload {

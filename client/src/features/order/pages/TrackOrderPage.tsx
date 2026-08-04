@@ -40,19 +40,19 @@ export function TrackOrderPage() {
     <section className="mx-auto max-w-2xl space-y-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Track Order</h1>
-        <p className="mt-1 text-slate-500">Enter your order ID to follow live status updates.</p>
+        <p className="mt-1 text-slate-500">Enter your order reference number to follow live status updates.</p>
       </header>
 
       <Card>
         <CardContent className="p-5">
           <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onSubmit}>
             <div className="flex-1 space-y-1.5">
-              <Label htmlFor="orderId">Order ID</Label>
+              <Label htmlFor="orderId">Order reference</Label>
               <Input
                 id="orderId"
                 value={inputId}
                 onChange={(event) => setInputId(event.target.value)}
-                placeholder="Paste your order ID"
+                placeholder="e.g. FO-260805-A3K9X2"
               />
             </div>
             <Button type="submit">Track</Button>
@@ -63,7 +63,7 @@ export function TrackOrderPage() {
       {!activeId ? (
         <EmptyState
           title="No order selected"
-          description="Place an order or paste an order ID above to start tracking."
+          description="Place an order or paste your order reference above to start tracking."
         />
       ) : null}
 

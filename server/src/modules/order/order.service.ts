@@ -5,7 +5,9 @@ import mongoose from 'mongoose';
 
 import { Order, ORDER_STATUSES, type IOrderBase, type OrderStatus } from '@src/models/order.model';
 import type { CreateOrderInput } from '@src/modules/order/order.validation';
+import { sendOrderConfirmationEmail, type EmailSendResult } from '@src/services/email.service';
 import { notFound } from '@src/utils/httpError';
+import { generateOrderReference } from '@src/utils/orderReference';
 
 const DELIVERY_FEE = 2.99;
 const TAX_RATE = 0.08;
@@ -13,6 +15,7 @@ const STATUS_ADVANCE_MS = 12_000;
 
 interface OrderResponse {
   id: string;
+  orderReference: string;
   items: IOrderBase['items'];
   delivery: IOrderBase['delivery'];
   status: OrderStatus;
@@ -23,6 +26,7 @@ interface OrderResponse {
   estimatedDeliveryMinutes: number;
   createdAt: string;
   updatedAt: string;
+  emailNotification?: EmailSendResult;
 }
 
 interface InMemoryOrder extends IOrderBase {
@@ -35,14 +39,20 @@ export class OrderService {
   private readonly inMemoryOrders: InMemoryOrder[] = [];
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  async createOrder(input: CreateOrderInput, io?: SocketIOServer): Promise<{ success: boolean; data: OrderResponse }> {
+  async createOrder(
+    input: CreateOrderInput,
+    io?: SocketIOServer,
+  ): Promise<{ success: boolean; data: OrderResponse }> {
     const subtotal = input.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = Number((subtotal * TAX_RATE).toFixed(2));
     const deliveryFee = DELIVERY_FEE;
     const total = Number((subtotal + tax + deliveryFee).toFixed(2));
     const notes = input.delivery.notes?.trim() ? input.delivery.notes.trim() : undefined;
+    const email = input.delivery.email?.trim() ? input.delivery.email.trim().toLowerCase() : undefined;
+    const orderReference = generateOrderReference();
 
     const payload: IOrderBase = {
+      orderReference,
       items: input.items,
       delivery: {
         name: input.delivery.name,
@@ -50,6 +60,7 @@ export class OrderService {
         address: input.delivery.address,
         city: input.delivery.city,
         postalCode: input.delivery.postalCode,
+        ...(email ? { email } : {}),
         ...(notes ? { notes } : {}),
       },
       status: 'Order Received',
@@ -58,6 +69,21 @@ export class OrderService {
       tax,
       total,
       estimatedDeliveryMinutes: 35,
+    };
+
+    let savedOrder: {
+      _id: string | { toString(): string };
+      orderReference: string;
+      items: IOrderBase['items'];
+      delivery: IOrderBase['delivery'];
+      status: OrderStatus;
+      subtotal: number;
+      deliveryFee: number;
+      tax: number;
+      total: number;
+      estimatedDeliveryMinutes: number;
+      createdAt: Date;
+      updatedAt: Date;
     };
 
     if (!this.isMongoConnected()) {
@@ -69,27 +95,60 @@ export class OrderService {
       };
       this.inMemoryOrders.unshift(order);
       this.scheduleStatusProgression(order._id, io);
-      return { success: true, data: this.toResponse(order) };
+      savedOrder = order;
+    } else {
+      const order = await Order.create(payload);
+      this.scheduleStatusProgression(order._id.toString(), io);
+      savedOrder = order;
     }
 
-    const order = await Order.create(payload);
-    this.scheduleStatusProgression(order._id.toString(), io);
-    return { success: true, data: this.toResponse(order) };
+    let emailNotification: EmailSendResult | undefined;
+
+    if (email) {
+      emailNotification = await sendOrderConfirmationEmail({
+        to: email,
+        customerName: input.delivery.name,
+        orderReference,
+        total,
+        estimatedDeliveryMinutes: payload.estimatedDeliveryMinutes,
+        items: input.items,
+      });
+    }
+
+    return {
+      success: true,
+      data: this.toResponse(savedOrder, emailNotification),
+    };
   }
 
   async getOrderById(id: string): Promise<{ success: boolean; data: OrderResponse }> {
+    const normalized = id.trim();
+    const reference = normalized.toUpperCase();
+
     if (!this.isMongoConnected()) {
-      const order = this.inMemoryOrders.find((entry) => entry._id === id);
+      const order = this.inMemoryOrders.find(
+        (entry) => entry._id === normalized || entry.orderReference === reference,
+      );
       if (!order) {
         throw notFound('Order not found');
       }
       return { success: true, data: this.toResponse(order) };
     }
 
-    const order = await Order.findById(id).exec();
+    let order = null;
+
+    if (mongoose.isValidObjectId(normalized)) {
+      order = await Order.findById(normalized).exec();
+    }
+
+    if (!order) {
+      order = await Order.findOne({ orderReference: reference }).exec();
+    }
+
     if (!order) {
       throw notFound('Order not found');
     }
+
     return { success: true, data: this.toResponse(order) };
   }
 
@@ -198,21 +257,26 @@ export class OrderService {
     await Order.findByIdAndUpdate(orderId, { status }).exec();
   }
 
-  private toResponse(order: {
-    _id: string | { toString(): string };
-    items: IOrderBase['items'];
-    delivery: IOrderBase['delivery'];
-    status: OrderStatus;
-    subtotal: number;
-    deliveryFee: number;
-    tax: number;
-    total: number;
-    estimatedDeliveryMinutes: number;
-    createdAt: Date;
-    updatedAt: Date;
-  }): OrderResponse {
+  private toResponse(
+    order: {
+      _id: string | { toString(): string };
+      orderReference: string;
+      items: IOrderBase['items'];
+      delivery: IOrderBase['delivery'];
+      status: OrderStatus;
+      subtotal: number;
+      deliveryFee: number;
+      tax: number;
+      total: number;
+      estimatedDeliveryMinutes: number;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    emailNotification?: EmailSendResult,
+  ): OrderResponse {
     return {
       id: order._id.toString(),
+      orderReference: order.orderReference,
       items: order.items,
       delivery: order.delivery,
       status: order.status,
@@ -223,6 +287,7 @@ export class OrderService {
       estimatedDeliveryMinutes: order.estimatedDeliveryMinutes,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
+      ...(emailNotification ? { emailNotification } : {}),
     };
   }
 

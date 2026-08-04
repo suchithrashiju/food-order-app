@@ -14,6 +14,11 @@ interface EnvConfig {
   adminEmail: string;
   adminPassword: string;
   seedSecret?: string;
+  smtpHost?: string;
+  smtpPort: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFrom?: string;
 }
 
 function getEnvValue(key: string, fallback?: string): string {
@@ -52,6 +57,10 @@ function getNumericEnvValue(key: string, fallback: number): number {
 }
 
 const seedSecret = getOptionalEnvValue('SEED_SECRET');
+const smtpHost = getOptionalEnvValue('SMTP_HOST');
+const smtpUser = getOptionalEnvValue('SMTP_USER');
+const smtpPass = getOptionalEnvValue('SMTP_PASS');
+const smtpFrom = getOptionalEnvValue('SMTP_FROM');
 
 export const env: EnvConfig = {
   nodeEnv: getEnvValue('NODE_ENV', 'development'),
@@ -64,7 +73,12 @@ export const env: EnvConfig = {
   adminUsername: getEnvValue('ADMIN_USERNAME', 'admin'),
   adminEmail: getEnvValue('ADMIN_EMAIL', 'admin@foodorder.local'),
   adminPassword: getEnvValue('ADMIN_PASSWORD', 'admin@2026'),
+  smtpPort: getNumericEnvValue('SMTP_PORT', 587),
   ...(seedSecret ? { seedSecret } : {}),
+  ...(smtpHost ? { smtpHost } : {}),
+  ...(smtpUser ? { smtpUser } : {}),
+  ...(smtpPass ? { smtpPass } : {}),
+  ...(smtpFrom ? { smtpFrom } : {}),
 };
 
 export const isDevelopment = env.nodeEnv === 'development';

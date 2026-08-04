@@ -130,7 +130,7 @@ export function AdminDashboardPage() {
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-slate-200 text-slate-500 dark:border-slate-700">
               <tr>
-                <th className="px-2 py-3 font-medium">Order ID</th>
+                <th className="px-2 py-3 font-medium">Order Ref</th>
                 <th className="px-2 py-3 font-medium">Customer</th>
                 <th className="px-2 py-3 font-medium">Status</th>
                 <th className="px-2 py-3 font-medium">Total</th>
@@ -147,7 +147,7 @@ export function AdminDashboardPage() {
               ) : (
                 stats.recentOrders.map((order) => (
                   <tr key={order.id} className="border-b border-slate-100 dark:border-slate-800">
-                    <td className="px-2 py-3 font-mono text-xs">{order.id.slice(0, 8)}…</td>
+                    <td className="px-2 py-3 font-mono text-xs">{order.orderReference}</td>
                     <td className="px-2 py-3">{order.delivery.name}</td>
                     <td className="px-2 py-3">{order.status}</td>
                     <td className="px-2 py-3">{formatCurrency(order.total)}</td>
