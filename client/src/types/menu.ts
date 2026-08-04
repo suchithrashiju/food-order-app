@@ -1,14 +1,17 @@
 export interface MenuItem {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  imageUrl: string;
-  isAvailable: boolean;
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  imageUrl?: string
+  isAvailable: boolean
 }
 
 export interface MenuApiResponse {
-  items: MenuItem[];
-  total: number;
+  success: boolean
+  data: MenuItem[]
+  items: MenuItem[]
+  count: number
+  total: number
 }
