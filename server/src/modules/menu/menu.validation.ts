@@ -24,6 +24,8 @@ export interface MenuItemDto {
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
+  rating: number;
+  preparationTime: number;
 }
 
 export interface MenuItemsResponse {

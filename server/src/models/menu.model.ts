@@ -7,6 +7,8 @@ export interface IMenuItemBase {
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
+  rating?: number;
+  preparationTime?: number;
   isDeleted?: boolean;
   createdBy?: string;
   updatedBy?: string;
@@ -27,6 +29,8 @@ const menuItemSchema = new Schema<IMenuItem>(
     category: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
     isAvailable: { type: Boolean, default: true },
+    rating: { type: Number, min: 0, max: 5, default: 4.5 },
+    preparationTime: { type: Number, min: 1, default: 20 },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: String, trim: true },
     updatedBy: { type: String, trim: true },

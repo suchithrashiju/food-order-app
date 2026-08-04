@@ -1,0 +1,87 @@
+import mongoose, { type Document, type Model, Schema } from 'mongoose';
+
+export const ORDER_STATUSES = [
+  'Order Received',
+  'Preparing',
+  'Out for Delivery',
+  'Delivered',
+] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export interface IOrderItem {
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface IDeliveryDetails {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  notes?: string;
+}
+
+export interface IOrderBase {
+  items: IOrderItem[];
+  delivery: IDeliveryDetails;
+  status: OrderStatus;
+  subtotal: number;
+  deliveryFee: number;
+  tax: number;
+  total: number;
+  estimatedDeliveryMinutes: number;
+}
+
+export interface IOrder extends Document, IOrderBase {
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const orderItemSchema = new Schema<IOrderItem>(
+  {
+    menuItemId: { type: String, required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false },
+);
+
+const deliverySchema = new Schema<IDeliveryDetails>(
+  {
+    name: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    address: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    postalCode: { type: String, required: true, trim: true },
+    notes: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
+const orderSchema = new Schema<IOrder>(
+  {
+    items: { type: [orderItemSchema], required: true },
+    delivery: { type: deliverySchema, required: true },
+    status: {
+      type: String,
+      enum: ORDER_STATUSES,
+      default: 'Order Received',
+    },
+    subtotal: { type: Number, required: true, min: 0 },
+    deliveryFee: { type: Number, required: true, min: 0 },
+    tax: { type: Number, required: true, min: 0 },
+    total: { type: Number, required: true, min: 0 },
+    estimatedDeliveryMinutes: { type: Number, required: true, min: 1 },
+  },
+  { timestamps: true },
+);
+
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1 });
+
+export const Order: Model<IOrder> = mongoose.model<IOrder>('Order', orderSchema);

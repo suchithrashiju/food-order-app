@@ -14,6 +14,8 @@ type MenuItemEntity = {
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
+  rating: number;
+  preparationTime: number;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +38,8 @@ export class MenuRepository {
         price: item.price,
         category: item.category,
         isAvailable: item.isAvailable,
+        rating: item.rating ?? 4.5,
+        preparationTime: item.preparationTime ?? 20,
         isDeleted: false,
         createdAt: now,
         updatedAt: now,
@@ -134,6 +138,8 @@ export class MenuRepository {
     category: string;
     imageUrl?: string;
     isAvailable: boolean;
+    rating?: number;
+    preparationTime?: number;
     isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
@@ -145,6 +151,8 @@ export class MenuRepository {
       price: item.price,
       category: item.category,
       isAvailable: item.isAvailable,
+      rating: item.rating ?? 4.5,
+      preparationTime: item.preparationTime ?? 20,
       isDeleted: item.isDeleted ?? false,
       createdAt: item.createdAt ?? new Date(),
       updatedAt: item.updatedAt ?? new Date(),

@@ -38,7 +38,17 @@ export class MenuService {
     };
   }
 
-  private toResponseItem(item: { _id: string; name: string; description: string; price: number; category: string; imageUrl?: string; isAvailable: boolean }): MenuItemDto {
+  private toResponseItem(item: {
+    _id: string;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+    imageUrl?: string;
+    isAvailable: boolean;
+    rating?: number;
+    preparationTime?: number;
+  }): MenuItemDto {
     const response: MenuItemDto = {
       id: item._id.toString(),
       name: item.name,
@@ -46,6 +56,8 @@ export class MenuService {
       price: item.price,
       category: item.category,
       isAvailable: item.isAvailable,
+      rating: item.rating ?? 4.5,
+      preparationTime: item.preparationTime ?? 20,
     };
 
     if (item.imageUrl) {
