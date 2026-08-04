@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import { env } from './env.js';
+import { env } from '@src/config/env';
 
 export async function connectDatabase(): Promise<void> {
   if (mongoose.connection.readyState >= 1) {
