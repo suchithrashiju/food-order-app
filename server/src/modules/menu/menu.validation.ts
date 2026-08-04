@@ -6,18 +6,35 @@ export const getMenuItemsQuerySchema = z
   })
   .strict();
 
+
+export const menuItemIdParamSchema = z
+  .object({
+    id: z.string().trim().min(1, 'Menu item id is required'),
+  })
+  .strict();
+
 export type GetMenuItemsQuery = z.infer<typeof getMenuItemsQuerySchema>;
+export type MenuItemIdParams = z.infer<typeof menuItemIdParamSchema>;
+
+export interface MenuItemDto {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  imageUrl?: string;
+  isAvailable: boolean;
+}
 
 export interface MenuItemsResponse {
   success: boolean;
-  data: Array<{
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    imageUrl: string | undefined;
-    isAvailable: boolean;
-  }>;
+  data: MenuItemDto[];
+  items: MenuItemDto[];
   count: number;
+  total: number;
+}
+
+export interface MenuItemResponse {
+  success: boolean;
+  data: MenuItemDto;
 }

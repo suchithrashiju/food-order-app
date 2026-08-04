@@ -1,30 +1,63 @@
-import type { IMenuItem } from '@src/models/menu.model';
 import { menuRepository } from '@src/modules/menu/menu.repository';
-import type { GetMenuItemsQuery, MenuItemsResponse } from '@src/modules/menu/menu.validation';
+import type {
+  GetMenuItemsQuery,
+  MenuItemDto,
+  MenuItemResponse,
+  MenuItemsResponse,
+} from '@src/modules/menu/menu.validation';
 
 export class MenuService {
   async getMenuItems(query: GetMenuItemsQuery): Promise<MenuItemsResponse> {
     await menuRepository.ensureSeeded();
 
     const items = await menuRepository.findAll(query);
+    const responseItems = items.map((item) => this.toResponseItem(item));
 
     return {
       success: true,
-      data: items.map((item) => this.toResponseItem(item)),
-      count: items.length,
+      data: responseItems,
+      items: responseItems,
+      count: responseItems.length,
+      total: responseItems.length,
     };
   }
 
-  private toResponseItem(item: IMenuItem) {
+  async getMenuItemById(id: string): Promise<MenuItemResponse> {
+    await menuRepository.ensureSeeded();
+
+    const item = await menuRepository.findById(id);
+
+    if (!item) {
+      throw this.createNotFoundError(id);
+    }
+
     return {
+      success: true,
+      data: this.toResponseItem(item),
+    };
+  }
+
+  private toResponseItem(item: { _id: string; name: string; description: string; price: number; category: string; imageUrl?: string; isAvailable: boolean }): MenuItemDto {
+    const response: MenuItemDto = {
       id: item._id.toString(),
       name: item.name,
       description: item.description,
       price: item.price,
       category: item.category,
-      imageUrl: item.imageUrl,
       isAvailable: item.isAvailable,
     };
+
+    if (item.imageUrl) {
+      response.imageUrl = item.imageUrl;
+    }
+
+    return response;
+  }
+
+  private createNotFoundError(id: string): Error & { statusCode?: number } {
+    const error = new Error(`Menu item with id ${id} was not found`) as Error & { statusCode?: number };
+    error.statusCode = 404;
+    return error;
   }
 }
 

@@ -7,11 +7,16 @@ export interface IMenuItemBase {
   category: string;
   imageUrl?: string;
   isAvailable: boolean;
+  isDeleted?: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedBy?: string;
 }
 
 export interface IMenuItem extends Document, IMenuItemBase {
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date;
 }
 
 const menuItemSchema = new Schema<IMenuItem>(
@@ -22,6 +27,10 @@ const menuItemSchema = new Schema<IMenuItem>(
     category: { type: String, required: true, trim: true },
     imageUrl: { type: String, trim: true },
     isAvailable: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    createdBy: { type: String, trim: true },
+    updatedBy: { type: String, trim: true },
+    deletedBy: { type: String, trim: true },
   },
   {
     timestamps: true,

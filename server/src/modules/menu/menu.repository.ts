@@ -1,7 +1,27 @@
-import { MenuItem, type IMenuItem, type IMenuItemBase } from '@src/models/menu.model';
+import { randomUUID } from 'node:crypto';
+
+import mongoose from 'mongoose';
+
+import { MenuItem, type IMenuItemBase } from '@src/models/menu.model';
 import type { GetMenuItemsQuery } from '@src/modules/menu/menu.validation';
 
-const defaultMenuItems: IMenuItemBase[] = [
+type MenuItemEntity = {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  imageUrl?: string;
+  isAvailable: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type MenuItemPayload = Omit<MenuItemEntity, '_id' | 'createdAt' | 'updatedAt'>;
+
+
+
+const defaultMenuItems: Array<IMenuItemBase> = [
   {
     name: 'Classic Burger',
     description: 'Juicy beef burger with lettuce, tomato, and house sauce.',
@@ -84,20 +104,77 @@ const defaultMenuItems: IMenuItemBase[] = [
   },
 ];
 
+let memoryMenuItems: MenuItemEntity[] = [];
+
 export class MenuRepository {
   async ensureSeeded(): Promise<void> {
-    const count = await MenuItem.countDocuments().exec();
+    if (this.isMongoConnected()) {
+      const count = await MenuItem.countDocuments().exec();
 
-    if (count > 0) {
+      if (count > 0) {
+        return;
+      }
+
+      await MenuItem.create(defaultMenuItems);
       return;
     }
 
-    await MenuItem.insertMany(defaultMenuItems);
+    if (memoryMenuItems.length > 0) {
+      return;
+    }
+
+    memoryMenuItems = defaultMenuItems.map((item) => {
+      const seededItem: MenuItemEntity = {
+        _id: randomUUID(),
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        isAvailable: item.isAvailable,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      if (item.imageUrl) {
+        seededItem.imageUrl = item.imageUrl;
+      }
+
+      return seededItem;
+    });
   }
 
-  async findAll(query: GetMenuItemsQuery): Promise<IMenuItem[]> {
+  async findAll(query: GetMenuItemsQuery): Promise<MenuItemEntity[]> {
+    if (!this.isMongoConnected()) {
+      return this.findAllInMemory(query);
+    }
+
     const filter = this.buildFilter(query);
-    return MenuItem.find(filter).sort({ name: 1 }).exec();
+    const items = await MenuItem.find(filter).sort({ name: 1 }).exec();
+
+    return items.map((item) => this.toEntity(item));
+  }
+
+  async findById(id: string): Promise<MenuItemEntity | null> {
+    if (!this.isMongoConnected()) {
+      return memoryMenuItems.find((item) => item._id === id) ?? null;
+    }
+
+    const item = await MenuItem.findById(id).exec();
+    return item ? this.toEntity(item) : null;
+  }
+
+  
+
+  private findAllInMemory(query: GetMenuItemsQuery): MenuItemEntity[] {
+    const filter = this.buildFilter(query);
+
+    return memoryMenuItems.filter((item) => {
+      if (!filter.category) {
+        return true;
+      }
+
+      return item.category.toLowerCase().includes(String(filter.category).toLowerCase());
+    });
   }
 
   private buildFilter(query: GetMenuItemsQuery): Record<string, unknown> {
@@ -106,6 +183,29 @@ export class MenuRepository {
     }
 
     return { category: { $regex: query.category, $options: 'i' } };
+  }
+
+  private isMongoConnected(): boolean {
+    return mongoose.connection.readyState === 1;
+  }
+
+  private toEntity(item: { _id: string | { toString(): string }; name: string; description: string; price: number; category: string; imageUrl?: string; isAvailable: boolean; createdAt?: Date; updatedAt?: Date }): MenuItemEntity {
+    const entity: MenuItemEntity = {
+      _id: item._id.toString(),
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      isAvailable: item.isAvailable,
+      createdAt: item.createdAt ?? new Date(),
+      updatedAt: item.updatedAt ?? new Date(),
+    };
+
+    if (item.imageUrl) {
+      entity.imageUrl = item.imageUrl;
+    }
+
+    return entity;
   }
 }
 
