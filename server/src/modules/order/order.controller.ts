@@ -1,15 +1,19 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { Server as SocketIOServer } from 'socket.io';
 
+import type { AdminRequest } from '@src/middlewares/adminAuth.middleware';
 import { orderService } from '@src/modules/order/order.service';
-import { createOrderSchema, orderIdParamSchema } from '@src/modules/order/order.validation';
+import {
+  createOrderSchema,
+  orderIdParamSchema,
+  updateOrderStatusSchema,
+} from '@src/modules/order/order.validation';
 
 export class OrderController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const input = createOrderSchema.parse(req.body);
-      const io = req.app.locals.io as SocketIOServer | undefined;
-      const response = await orderService.createOrder(input, io);
+      const response = await orderService.createOrder(input);
       res.status(201).json(response);
     } catch (error) {
       next(error);
@@ -38,6 +42,24 @@ export class OrderController {
   async dashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const response = await orderService.getDashboardStats();
+      res.status(200).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateStatus(req: AdminRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = orderIdParamSchema.parse(req.params);
+      const { status, remarks } = updateOrderStatusSchema.parse(req.body);
+      const io = req.app.locals.io as SocketIOServer | undefined;
+      const response = await orderService.updateOrderStatus(
+        id,
+        status,
+        remarks || undefined,
+        req.adminUser ?? 'admin',
+        io,
+      );
       res.status(200).json(response);
     } catch (error) {
       next(error);

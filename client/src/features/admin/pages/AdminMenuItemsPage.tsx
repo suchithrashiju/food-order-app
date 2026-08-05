@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
 import { EmptyState } from '@/components/common/EmptyState'
@@ -27,6 +28,8 @@ type FormMode = 'create' | 'edit'
 
 export function AdminMenuItemsPage() {
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [formMode, setFormMode] = useState<FormMode | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<AdminMenuItemPayload>(EMPTY_FORM)
@@ -171,6 +174,25 @@ export function AdminMenuItemsPage() {
   }
 
   const isSaving = createMutation.isPending || updateMutation.isPending
+  const items = menuQuery.data ?? []
+
+  useEffect(() => {
+    const editItemId =
+      typeof location.state === 'object' &&
+      location.state !== null &&
+      'editItemId' in location.state &&
+      typeof (location.state as { editItemId?: unknown }).editItemId === 'string'
+        ? (location.state as { editItemId: string }).editItemId
+        : null
+
+    if (!editItemId || items.length === 0) return
+
+    const item = items.find((entry) => entry.id === editItemId)
+    if (item) {
+      openEditForm(item)
+      navigate('.', { replace: true, state: null })
+    }
+  }, [items, location.state, navigate])
 
   if (menuQuery.isLoading) {
     return <p className="text-slate-500">Loading menu items…</p>
@@ -186,8 +208,6 @@ export function AdminMenuItemsPage() {
       />
     )
   }
-
-  const items = menuQuery.data ?? []
 
   return (
     <section className="space-y-6">
@@ -294,6 +314,7 @@ export function AdminMenuItemsPage() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-slate-200 text-slate-500 dark:border-slate-700">
               <tr>
+                <th className="px-2 py-3 font-medium">Sl No</th>
                 <th className="px-2 py-3 font-medium">Name</th>
                 <th className="px-2 py-3 font-medium">Category</th>
                 <th className="px-2 py-3 font-medium">Price</th>
@@ -304,13 +325,14 @@ export function AdminMenuItemsPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-2 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-2 py-8 text-center text-slate-500">
                     No menu items yet. Add your first item.
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
+                items.map((item, index) => (
                   <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="px-2 py-3 text-slate-500">{index + 1}</td>
                     <td className="px-2 py-3">
                       <div className="font-medium text-slate-900 dark:text-slate-100">{item.name}</div>
                       <div className="line-clamp-1 text-xs text-slate-500">{item.description}</div>
@@ -324,6 +346,9 @@ export function AdminMenuItemsPage() {
                     </td>
                     <td className="px-2 py-3">
                       <div className="flex flex-wrap gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={`/admin/menu-items/${item.id}`}>View</Link>
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"

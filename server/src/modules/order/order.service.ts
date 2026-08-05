@@ -3,15 +3,21 @@ import { randomUUID } from 'node:crypto';
 import type { Server as SocketIOServer } from 'socket.io';
 import mongoose from 'mongoose';
 
-import { Order, ORDER_STATUSES, type IOrderBase, type OrderStatus } from '@src/models/order.model';
+import { Order, type IOrderBase, type IStatusHistoryEntry, type OrderStatus } from '@src/models/order.model';
 import type { CreateOrderInput } from '@src/modules/order/order.validation';
 import { sendOrderConfirmationEmail, type EmailSendResult } from '@src/services/email.service';
-import { notFound } from '@src/utils/httpError';
+import { badRequest, notFound } from '@src/utils/httpError';
 import { generateOrderReference } from '@src/utils/orderReference';
 
 const DELIVERY_FEE = 2.99;
 const TAX_RATE = 0.08;
-const STATUS_ADVANCE_MS = 12_000;
+
+interface StatusHistoryResponse {
+  status: OrderStatus;
+  remarks?: string;
+  updatedBy: string;
+  updatedAt: string;
+}
 
 interface OrderResponse {
   id: string;
@@ -19,6 +25,7 @@ interface OrderResponse {
   items: IOrderBase['items'];
   delivery: IOrderBase['delivery'];
   status: OrderStatus;
+  statusHistory: StatusHistoryResponse[];
   subtotal: number;
   deliveryFee: number;
   tax: number;
@@ -35,13 +42,27 @@ interface InMemoryOrder extends IOrderBase {
   updatedAt: Date;
 }
 
+function createHistoryEntry(
+  status: OrderStatus,
+  updatedBy: string,
+  remarks?: string,
+): IStatusHistoryEntry {
+  const entry: IStatusHistoryEntry = {
+    status,
+    updatedBy,
+    updatedAt: new Date(),
+  };
+  if (remarks) {
+    entry.remarks = remarks;
+  }
+  return entry;
+}
+
 export class OrderService {
   private readonly inMemoryOrders: InMemoryOrder[] = [];
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   async createOrder(
     input: CreateOrderInput,
-    io?: SocketIOServer,
   ): Promise<{ success: boolean; data: OrderResponse }> {
     const subtotal = input.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = Number((subtotal * TAX_RATE).toFixed(2));
@@ -50,6 +71,7 @@ export class OrderService {
     const notes = input.delivery.notes?.trim() ? input.delivery.notes.trim() : undefined;
     const email = input.delivery.email?.trim() ? input.delivery.email.trim().toLowerCase() : undefined;
     const orderReference = generateOrderReference();
+    const now = new Date();
 
     const payload: IOrderBase = {
       orderReference,
@@ -64,6 +86,9 @@ export class OrderService {
         ...(notes ? { notes } : {}),
       },
       status: 'Order Received',
+      statusHistory: [
+        createHistoryEntry('Order Received', 'system', 'Order placed by customer'),
+      ],
       subtotal: Number(subtotal.toFixed(2)),
       deliveryFee,
       tax,
@@ -77,6 +102,7 @@ export class OrderService {
       items: IOrderBase['items'];
       delivery: IOrderBase['delivery'];
       status: OrderStatus;
+      statusHistory?: IStatusHistoryEntry[];
       subtotal: number;
       deliveryFee: number;
       tax: number;
@@ -90,15 +116,13 @@ export class OrderService {
       const order: InMemoryOrder = {
         _id: randomUUID(),
         ...payload,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       };
       this.inMemoryOrders.unshift(order);
-      this.scheduleStatusProgression(order._id, io);
       savedOrder = order;
     } else {
       const order = await Order.create(payload);
-      this.scheduleStatusProgression(order._id.toString(), io);
       savedOrder = order;
     }
 
@@ -152,6 +176,88 @@ export class OrderService {
     return { success: true, data: this.toResponse(order) };
   }
 
+  async updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+    remarks?: string,
+    updatedBy = 'admin',
+    io?: SocketIOServer,
+  ): Promise<{ success: boolean; data: OrderResponse }> {
+    const normalized = id.trim();
+    const reference = normalized.toUpperCase();
+    const trimmedRemarks = remarks?.trim() ? remarks.trim() : undefined;
+
+    if (!trimmedRemarks) {
+      throw badRequest(status === 'Cancelled' ? 'Cancellation reason is required' : 'Remarks are required');
+    }
+
+    const historyEntry = createHistoryEntry(status, updatedBy, trimmedRemarks);
+
+    if (!this.isMongoConnected()) {
+      const order = this.inMemoryOrders.find(
+        (entry) => entry._id === normalized || entry.orderReference === reference,
+      );
+      if (!order) {
+        throw notFound('Order not found');
+      }
+      if (order.status === 'Cancelled') {
+        throw badRequest('Cancelled orders cannot be updated');
+      }
+      if (order.status === 'Delivered' && status !== 'Delivered') {
+        throw badRequest('Delivered orders cannot be changed');
+      }
+      if (status === 'Cancelled' && order.status === 'Delivered') {
+        throw badRequest('Delivered orders cannot be cancelled');
+      }
+      order.status = status;
+      order.statusHistory = [...(order.statusHistory ?? []), historyEntry];
+      order.updatedAt = new Date();
+      io?.to(`order:${order._id}`).emit('order:status', {
+        orderId: order._id,
+        status,
+      });
+      return { success: true, data: this.toResponse(order) };
+    }
+
+    let order = null;
+
+    if (mongoose.isValidObjectId(normalized)) {
+      order = await Order.findById(normalized).exec();
+    }
+
+    if (!order) {
+      order = await Order.findOne({ orderReference: reference }).exec();
+    }
+
+    if (!order) {
+      throw notFound('Order not found');
+    }
+
+    if (order.status === 'Cancelled') {
+      throw badRequest('Cancelled orders cannot be updated');
+    }
+    if (order.status === 'Delivered' && status !== 'Delivered') {
+      throw badRequest('Delivered orders cannot be changed');
+    }
+    if (status === 'Cancelled' && order.status === 'Delivered') {
+      throw badRequest('Delivered orders cannot be cancelled');
+    }
+
+    order.status = status;
+    if (!order.statusHistory) {
+      order.statusHistory = [];
+    }
+    order.statusHistory.push(historyEntry);
+    await order.save();
+
+    io?.to(`order:${order._id.toString()}`).emit('order:status', {
+      orderId: order._id.toString(),
+      status,
+    });
+
+    return { success: true, data: this.toResponse(order) };
+  }
+
   async listOrders(): Promise<{ success: boolean; data: OrderResponse[]; count: number }> {
     if (!this.isMongoConnected()) {
       const data = this.inMemoryOrders.map((order) => this.toResponse(order));
@@ -167,9 +273,11 @@ export class OrderService {
     success: boolean;
     data: {
       totalOrders: number;
+      todaysOrders: number;
       todaysRevenue: number;
       pendingOrders: number;
       completedOrders: number;
+      cancelledOrders: number;
       recentOrders: OrderResponse[];
     };
   }> {
@@ -177,84 +285,24 @@ export class OrderService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const todaysRevenue = orders
-      .filter((order) => new Date(order.createdAt) >= startOfDay)
-      .reduce((sum, order) => sum + order.total, 0);
+    const todaysOrdersList = orders.filter((order) => new Date(order.createdAt) >= startOfDay);
+    const todaysBillableOrders = todaysOrdersList.filter((order) => order.status !== 'Cancelled');
+    const todaysRevenue = todaysBillableOrders.reduce((sum, order) => sum + order.total, 0);
 
     return {
       success: true,
       data: {
         totalOrders: orders.length,
+        todaysOrders: todaysBillableOrders.length,
         todaysRevenue: Number(todaysRevenue.toFixed(2)),
-        pendingOrders: orders.filter((order) => order.status !== 'Delivered').length,
+        pendingOrders: orders.filter(
+          (order) => order.status !== 'Delivered' && order.status !== 'Cancelled',
+        ).length,
         completedOrders: orders.filter((order) => order.status === 'Delivered').length,
+        cancelledOrders: orders.filter((order) => order.status === 'Cancelled').length,
         recentOrders: orders.slice(0, 10),
       },
     };
-  }
-
-  private scheduleStatusProgression(orderId: string, io?: SocketIOServer): void {
-    const existing = this.timers.get(orderId);
-    if (existing) {
-      clearTimeout(existing);
-    }
-
-    const advance = async (): Promise<void> => {
-      const current = await this.getCurrentStatus(orderId);
-      if (!current) {
-        return;
-      }
-
-      const index = ORDER_STATUSES.indexOf(current);
-      if (index < 0 || index >= ORDER_STATUSES.length - 1) {
-        this.timers.delete(orderId);
-        return;
-      }
-
-      const nextStatus = ORDER_STATUSES[index + 1]!;
-      await this.updateStatus(orderId, nextStatus);
-
-      io?.to(`order:${orderId}`).emit('order:status', {
-        orderId,
-        status: nextStatus,
-      });
-
-      if (nextStatus !== 'Delivered') {
-        const timer = setTimeout(() => {
-          void advance();
-        }, STATUS_ADVANCE_MS);
-        this.timers.set(orderId, timer);
-      } else {
-        this.timers.delete(orderId);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      void advance();
-    }, STATUS_ADVANCE_MS);
-    this.timers.set(orderId, timer);
-  }
-
-  private async getCurrentStatus(orderId: string): Promise<OrderStatus | null> {
-    if (!this.isMongoConnected()) {
-      return this.inMemoryOrders.find((order) => order._id === orderId)?.status ?? null;
-    }
-
-    const order = await Order.findById(orderId).select('status').lean().exec();
-    return (order?.status as OrderStatus | undefined) ?? null;
-  }
-
-  private async updateStatus(orderId: string, status: OrderStatus): Promise<void> {
-    if (!this.isMongoConnected()) {
-      const order = this.inMemoryOrders.find((entry) => entry._id === orderId);
-      if (order) {
-        order.status = status;
-        order.updatedAt = new Date();
-      }
-      return;
-    }
-
-    await Order.findByIdAndUpdate(orderId, { status }).exec();
   }
 
   private toResponse(
@@ -264,6 +312,7 @@ export class OrderService {
       items: IOrderBase['items'];
       delivery: IOrderBase['delivery'];
       status: OrderStatus;
+      statusHistory?: IStatusHistoryEntry[];
       subtotal: number;
       deliveryFee: number;
       tax: number;
@@ -274,12 +323,23 @@ export class OrderService {
     },
     emailNotification?: EmailSendResult,
   ): OrderResponse {
+    const history = (order.statusHistory ?? []).map((entry) => ({
+      status: entry.status,
+      ...(entry.remarks ? { remarks: entry.remarks } : {}),
+      updatedBy: entry.updatedBy,
+      updatedAt:
+        entry.updatedAt instanceof Date
+          ? entry.updatedAt.toISOString()
+          : new Date(entry.updatedAt).toISOString(),
+    }));
+
     return {
       id: order._id.toString(),
       orderReference: order.orderReference,
       items: order.items,
       delivery: order.delivery,
       status: order.status,
+      statusHistory: history,
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,
       tax: order.tax,
