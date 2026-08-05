@@ -12,7 +12,7 @@ Full-stack order management for a food delivery app: browse the menu, manage a c
 |------|----------------|
 | Menu | Name, description, price, image; search / category filters |
 | Cart | Add items, change quantity, persisted in `localStorage` |
-| Checkout | Name, phone, address (+ city / postal); places `POST /api/orders` |
+| Checkout | Name, email, phone, address (+ city / postal); places `POST /api/orders` |
 | Order status | Timeline: Order Received → Preparing → Out for Delivery → Delivered |
 | Real-time | Socket.IO push + optional back-end status **simulator** |
 | Admin | JWT login, dashboard, menu CRUD, manual status updates |
@@ -131,8 +131,8 @@ Host **two** services:
    - Set `MONGO_URI`, `CORS_ORIGIN` to the Vercel/Netlify URL, `ADMIN_JWT_SECRET`, and optionally `ORDER_STATUS_SIMULATION=true` for demos.
 3. Put the **live app URL** here once deployed:
 
-> **Live demo:** _add your Vercel/Netlify URL_  
-> **API:** _add your Render/Railway URL_
+> **Live demo:** https://food-order-app-kappa-ivory.vercel.app
+> **API:** https://food-order-api-yo11.onrender.com
 
 ---
 
