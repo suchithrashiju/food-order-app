@@ -1,78 +1,258 @@
 # Food Order App
 
-Full-stack order management for a food delivery app: browse the menu, manage a cart, checkout with delivery details, and track order status in near real time.
+![React](https://img.shields.io/badge/React-19-blue)
+![Node.js](https://img.shields.io/badge/Node.js-Express-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Tests](https://img.shields.io/badge/Tests-31_Passing-success)
+![License](https://img.shields.io/badge/License-ISC-lightgrey)
 
-**Stack:** React 19 + Vite (client) · Node.js + Express + MongoDB (server) · Socket.IO · Zod validation · Vitest / Node test runner
+A full-stack **Order Management** application for a food delivery platform. The application allows customers to browse the menu, manage their cart, place orders with delivery details, and track order status in near real time. It also includes an admin portal for menu management and order administration.
+
+**Live app:** [https://food-order-app-kappa-ivory.vercel.app](https://food-order-app-kappa-ivory.vercel.app)
+
+---
+
+## Screenshots
+
+### Customer Home
+
+![Home](docs/screenshots/home.png)
+
+### Menu
+
+![Customer Menu](docs/screenshots/menu-customer.png)
+
+### Cart
+
+![Cart](docs/screenshots/cart.png)
+
+### Checkout
+
+![Checkout](docs/screenshots/checkout.png)
+
+### Order Tracking
+
+![Tracking](docs/screenshots/tracking.png)
+
+### Admin Login
+
+![Admin Login](docs/screenshots/admin-login.png)
+
+### Admin Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Menu Management
+
+![Menu](docs/screenshots/menu.png)
+
+---
+
+## Tech Stack
+
+| Layer          | Tech                                             |
+| -------------- | ------------------------------------------------------- |
+| Frontend       | React 19, Vite, TypeScript, Tailwind CSS, TanStack Query, React Router |
+| Backend        | Node.js, Express.js, TypeScript, Mongoose               |
+| Database       | MongoDB (with in-memory fallback)                       |
+| Real-Time      | Socket.IO                                               |
+| Email          | Nodemailer (SMTP; console fallback when unset)          |
+| Validation     | Zod                                                     |
+| Testing        | Vitest, Node Test Runner                                |
+| Authentication | JWT (bcrypt password hashing)                           |
 
 ---
 
 ## Features
 
-| Area | What you get |
-|------|----------------|
-| Menu | Name, description, price, image; search / category filters |
-| Cart | Add items, change quantity, persisted in `localStorage` |
-| Checkout | Name, email, phone, address (+ city / postal); places `POST /api/orders` |
-| Order status | Timeline: Order Received → Preparing → Out for Delivery → Delivered |
-| Real-time | Socket.IO push + optional back-end status **simulator** |
-| Admin | JWT login, dashboard, menu CRUD, manual status updates |
-| Storage | MongoDB when connected; in-memory fallback otherwise |
-| Tests | API (menu, orders, admin) + UI (menu card, cart, checkout, timeline) |
+| Area                     | Description                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| **Menu**                 | Browse menu items with name, description, price, image, search, and category filters.             |
+| **Cart**                 | Add, remove, and update item quantities with persistent cart storage using Local Storage.         |
+| **Checkout**             | Submit delivery details (name, optional email, phone, address, city, postal code) and place an order. |
+| **Order Tracking**       | Track order progress through **Order Received → Preparing → Out for Delivery → Delivered**, including **Cancelled**. |
+| **Real-Time Updates**    | Live status updates using Socket.IO with polling fallback and optional backend status simulation. |
+| **Email Notifications**  | Order confirmation, delivered, and cancelled emails via SMTP (logged to console if SMTP is not configured). |
+| **Admin Portal**         | JWT authentication, dashboard, menu CRUD, order list/detail, and status updates (including cancel). |
+| **Storage**              | MongoDB persistence with automatic in-memory fallback when the database is unavailable.           |
+| **Testing**              | Automated API and UI tests covering the core application workflow.                                |
 
 ---
 
-## Project structure
+## Assignment Requirement Coverage
 
-```
+| Requirement               | Status        |
+| ------------------------- | ------------- |
+| Menu Display              | ✅ Completed   |
+| Order Placement           | ✅ Completed   |
+| Order Status Tracking     | ✅ Completed   |
+| REST API                  | ✅ Completed   |
+| React + Vite Frontend     | ✅ Completed   |
+| Automated API Tests       | ✅ Completed   |
+| Automated UI Tests        | ✅ Completed   |
+| Real-Time Updates         | ✅ Completed   |
+| Hosted Application        | ✅ Completed   |
+| Admin Dashboard *(Bonus)* | ✅ Implemented |
+| Menu CRUD *(Bonus)*       | ✅ Implemented |
+
+---
+
+## Project Structure
+
+```text
 food-order-app/
-├── client/                 # React + Vite SPA
+├── client/
 │   └── src/
-│       ├── features/       # menu, cart, order, admin
-│       ├── services/       # API clients
-│       └── hooks/          # e.g. useOrderStatusSocket
-└── server/                 # Express API
+│       ├── app/              # Router and providers
+│       ├── components/       # Shared layout and UI
+│       ├── features/
+│       │   ├── menu/
+│       │   ├── cart/
+│       │   ├── order/
+│       │   └── admin/
+│       ├── services/
+│       ├── hooks/
+│       └── lib/
+│
+└── server/
     └── src/
-        ├── modules/        # menu, order, admin
-        ├── models/         # Mongoose schemas
-        └── tests/          # API + unit tests
+        ├── config/           # Env, database, socket
+        ├── middlewares/
+        ├── modules/
+        │   ├── menu/
+        │   ├── order/
+        │   └── admin-modules/
+        │       ├── admin/
+        │       └── menu-items/
+        ├── models/
+        ├── services/         # Email, shared services
+        ├── data/             # Seed menu data
+        ├── routes/
+        └── tests/
+```
+
+---
+
+## Architecture
+
+![Architecture](docs/screenshots/architecture.png)
+
+```text
+Browser
+    │
+React + Vite
+    │
+REST API + Socket.IO
+    │
+Node.js + Express
+    │
+MongoDB Atlas
+    │
+In-Memory Fallback
 ```
 
 ---
 
 ## Prerequisites
 
-- Node.js 20+
-- MongoDB Atlas (or local Mongo) — optional; API falls back to in-memory if disconnected
-- npm
+* Node.js 20+
+* npm
+* MongoDB Atlas (or a local MongoDB instance)
+
+> **Note:** If MongoDB is unavailable, the server automatically falls back to in-memory storage for demonstration purposes. On startup, the server also bootstraps the default admin user and seed menu when needed.
 
 ---
 
-## Local setup
+## Quick Start
 
-### 1. Server
+**Backend**
 
 ```bash
 cd server
-cp .env.example .env
-# Edit MONGO_URI, CORS_ORIGIN, ADMIN_* as needed
 npm install
 npm run dev
 ```
 
-API defaults to `http://localhost:3000`.
+**Frontend**
 
-Useful env flags:
+```bash
+cd client
+npm install
+npm run dev
+```
 
-| Variable | Purpose |
-|----------|---------|
-| `ORDER_STATUS_SIMULATION=true` | Auto-advance status every N ms after place order |
-| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Step interval (default `8000`) |
-| `CORS_ORIGIN` | Front-end origin (e.g. `http://localhost:5173`) |
-| `SEED_SECRET` | Protect `POST /api/admin/seed` in production |
+Open: [http://localhost:5173](http://localhost:5173)
 
-Bootstrap seeds admin + menu on server start when possible. Default admin (see `.env.example`): `admin` / `admin@2026`.
+Admin login: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
 
-### 2. Client
+---
+
+## Local Setup
+
+Start the **backend first**, then the frontend.
+
+### Backend
+
+```bash
+cd server
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Default API:
+
+```
+http://localhost:3000
+```
+
+Health check: `GET http://localhost:3000/api/health`
+
+Production build:
+
+```bash
+npm run build
+npm start
+```
+
+### Backend Environment Variables
+
+| Variable                              | Description                                                  |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `NODE_ENV`                            | `development` or `production`                                |
+| `PORT`                                | API port (default `3000`)                                    |
+| `MONGO_URI`                           | MongoDB connection string                                    |
+| `DATABASE`                            | Database name                                                |
+| `CORS_ORIGIN`                         | Frontend origin (must match the client URL)                  |
+| `ADMIN_JWT_SECRET`                    | JWT signing secret                                           |
+| `ADMIN_JWT_EXPIRES_IN_SECONDS`        | Token lifetime (default `28800`)                             |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD`   | Default admin credentials used for bootstrap                 |
+| `ADMIN_EMAIL`                         | Admin email used during seed                                 |
+| `ORDER_STATUS_SIMULATION`             | Auto-advance order status for demos (`true` / `false`)       |
+| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Interval between simulated status transitions                |
+| `SEED_SECRET`                         | Optional; required to call `POST /api/admin/seed` when set   |
+| `SMTP_HOST` / `SMTP_PORT`             | Optional SMTP host and port for order emails                 |
+| `SMTP_USER` / `SMTP_PASSWORD`         | Optional SMTP credentials                                    |
+| `SMTP_FROM`                           | Optional From header (e.g. `FoodOrder <noreply@app.com>`)    |
+
+Default seeded administrator:
+
+```
+Username: admin
+Password: admin@2026
+```
+
+Admin UI (after both apps are running):
+
+```
+http://localhost:5173/admin/login
+```
+
+**Seed / bootstrap:** On server start, admin + menu are seeded automatically when missing. You can also call `POST /api/admin/seed`. If `SEED_SECRET` is set, send it via the `x-seed-secret` header or JSON body `{ "seedSecret": "..." }`.
+
+---
+
+### Frontend
 
 ```bash
 cd client
@@ -81,70 +261,203 @@ npm install
 npm run dev
 ```
 
-App defaults to `http://localhost:5173`. Leave `VITE_API_URL` empty locally so Vite proxies `/api` → `http://localhost:3000`. Socket.IO connects to `http://localhost:3000` in dev.
+Default application:
 
----
-
-## How real-time status works
-
-1. Customer places an order → status starts as **Order Received**.
-2. If `ORDER_STATUS_SIMULATION=true`, the server schedules **Preparing → Out for Delivery → Delivered** and emits `order:status` on Socket.IO room `order:{id}`.
-3. Admin can also `PATCH /api/admin/orders/:id/status` (this cancels the simulator for that order).
-4. Track page joins the room via Socket.IO and refreshes the order; polling every 8s is a fallback.
-
----
-
-## Main API routes
-
-| Method | Path | Notes |
-|--------|------|--------|
-| `GET` | `/api/menu` | Public menu list |
-| `POST` | `/api/orders` | Place order |
-| `GET` | `/api/orders/:id` | By Mongo id or `FO-…` reference |
-| `POST` | `/api/admin/login` | JWT |
-| `PATCH` | `/api/admin/orders/:id/status` | Status update (auth + remarks) |
-| `CRUD` | `/api/admin/menu-items` | Admin menu management |
-
----
-
-## Tests
-
-```bash
-# API
-cd server && npm test
-
-# UI
-cd client && npm test
+```
+http://localhost:5173
 ```
 
-Coverage includes order create/get, delivery validation, status transitions, menu card, cart quantity, checkout validation, and order timeline.
+Production build:
+
+```bash
+npm run build
+npm run preview
+```
+
+### Frontend Environment Variables
+
+| Variable         | Description                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `VITE_API_URL`   | Public API origin (no trailing slash). Leave empty locally to use the Vite `/api` proxy. |
+| `VITE_SOCKET_URL`| Optional Socket.IO origin. Defaults to `VITE_API_URL`, or `http://localhost:3000` in Vite dev. |
 
 ---
 
-## Hosting (deliverable)
+## Order Status Flow
 
-Host **two** services:
+```text
+Order Received
+        │
+        ▼
+Preparing
+        │
+        ▼
+Out for Delivery
+        │
+        ▼
+Delivered
 
-1. **Client** — Vercel or Netlify (`client/`; SPA rewrite in `client/vercel.json`)
-   - Set `VITE_API_URL` to your public API URL (no trailing slash) at build time.
-2. **Server** — Render, Railway, Fly.io, etc.
-   - Set `MONGO_URI`, `CORS_ORIGIN` to the Vercel/Netlify URL, `ADMIN_JWT_SECRET`, and optionally `ORDER_STATUS_SIMULATION=true` for demos.
-3. Put the **live app URL** here once deployed:
+        └──► Cancelled (admin can cancel before Delivered)
+```
 
-> **Live demo:** https://food-order-app-kappa-ivory.vercel.app
-> **API:** https://food-order-api-yo11.onrender.com
+The backend can automatically simulate the happy-path status changes using configurable timers. Administrators can also update or cancel orders manually from the dashboard.
 
 ---
 
-## Loom video checklist
+## Main API Endpoints
 
-Record 12–15 minutes covering:
+All routes are mounted under `/api`.
 
-- Requirement breakdown and folder structure
-- Architecture (REST + Socket.IO + simulator + Mongo/in-memory)
-- Walk-through of order flow and tests
-- How you used AI (generation, tests, debugging) and what you changed by hand
-- Challenges (CORS/hosting, real-time vs polling, validation)
+| Method | Endpoint                            | Description                                      |
+| ------ | ----------------------------------- | ------------------------------------------------ |
+| GET    | `/api/health`                       | Health check                                     |
+| GET    | `/api/menu`                         | Retrieve menu items                              |
+| GET    | `/api/menu/:id`                     | Retrieve a single menu item                      |
+| POST   | `/api/orders`                       | Place a new order                                |
+| GET    | `/api/orders/:id`                   | Retrieve an order by ID or reference             |
+| POST   | `/api/admin/login`                  | Authenticate administrator                       |
+| POST   | `/api/admin/seed`                   | Bootstrap admin user, config, and seed menu      |
+| GET    | `/api/admin/dashboard`              | Admin dashboard summary *(auth)*                 |
+| GET    | `/api/admin/orders`                 | List orders *(auth)*                             |
+| GET    | `/api/admin/orders/stats`           | Order statistics *(auth)*                        |
+| PATCH  | `/api/admin/orders/:id/status`      | Update order status *(auth)*                     |
+| GET    | `/api/admin/menu-items`             | List menu items for admin *(auth)*               |
+| POST   | `/api/admin/menu-items`             | Create menu item *(auth)*                        |
+| PATCH  | `/api/admin/menu-items/:id`         | Update menu item *(auth)*                        |
+| DELETE | `/api/admin/menu-items/:id`         | Soft-delete menu item *(auth)*                   |
+| PATCH  | `/api/admin/menu-items/:id/status`  | Change menu item availability *(auth)*           |
+
+---
+
+## Automated Testing
+
+Run backend tests:
+
+```bash
+cd server
+npm test
+```
+
+Run frontend tests:
+
+```bash
+cd client
+npm test
+```
+
+### Test Results
+
+| Area     | Result                       |
+| -------- | ---------------------------- |
+| Backend  | ✅ 22 Passing Tests           |
+| Frontend | ✅ 9 Passing Tests            |
+| Total    | ✅ 31 Passing Automated Tests |
+
+The automated tests cover:
+
+* Order creation
+* Order retrieval
+* Delivery validation
+* Status transitions
+* Authentication
+* Menu CRUD
+* Menu rendering
+* Cart functionality
+* Checkout validation
+* Order timeline rendering
+
+---
+
+## Deployment
+
+### Frontend
+
+**Platform:** Vercel
+
+https://food-order-app-kappa-ivory.vercel.app
+
+**Environment variables (Vercel):**
+
+| Variable       | Example value                              |
+| -------------- | ------------------------------------------ |
+| `VITE_API_URL` | `https://food-order-api-yo11.onrender.com` |
+
+Optionally set `VITE_SOCKET_URL` to the same API origin if sockets should not inherit `VITE_API_URL`.
+
+### Backend
+
+**Platform:** Render
+
+https://food-order-api-yo11.onrender.com
+
+**Environment variables (Render):**
+
+| Variable           | Notes                                              |
+| ------------------ | -------------------------------------------------- |
+| `NODE_ENV`         | `production`                                       |
+| `MONGO_URI`        | MongoDB Atlas connection string                    |
+| `DATABASE`         | Database name                                      |
+| `CORS_ORIGIN`      | Exact frontend URL (Vercel app origin)             |
+| `ADMIN_JWT_SECRET` | Strong random secret                               |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | Bootstrap admin credentials |
+| `ORDER_STATUS_SIMULATION` | Optional; useful for live demos              |
+| `SEED_SECRET`      | Recommended if the seed endpoint stays enabled     |
+| `SMTP_*`           | Optional; enable real order emails                 |
+
+> **Note:** Free Render instances may cold-start after idle time; the first API request can take a few seconds.
+
+### Demo Credentials
+
+Use these to sign in to the hosted admin portal at
+[https://food-order-app-kappa-ivory.vercel.app/admin/login](https://food-order-app-kappa-ivory.vercel.app/admin/login):
+
+```
+Username: admin
+Password: admin@2026
+```
+
+---
+
+## AI-Assisted Development
+
+AI tools were used to assist with:
+
+* Initial project scaffolding
+* Architecture review
+* Debugging
+* Test case generation
+* Documentation improvements
+
+All generated code was manually reviewed, modified, integrated, and validated through automated testing before submission.
+
+---
+
+## Loom Demonstration
+
+https://www.loom.com/share/xxxxxxxx
+
+The project walkthrough covers:
+
+* Requirement analysis
+* Project architecture
+* Folder structure
+* Customer ordering workflow
+* Admin dashboard
+* Real-time order updates
+* Automated testing
+* AI-assisted development process
+* Challenges encountered and solutions implemented
+
+---
+
+## Future Improvements
+
+* Online payment gateway integration
+* Customer authentication
+* Order history
+* Push notifications
+* Google Maps integration
+* Restaurant management module
 
 ---
 

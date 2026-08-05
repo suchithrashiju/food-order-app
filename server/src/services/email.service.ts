@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 import { env } from '@src/config/env';
 
@@ -39,8 +40,11 @@ function formatItemLines(items: Array<{ name: string; quantity: number; price: n
     .join('\n');
 }
 
-function isSmtpConfigured(): boolean {
-  return Boolean(env.smtpHost && env.smtpUser && env.smtpPass && env.smtpFrom);
+/** Runs email work in the background so API handlers never wait on SMTP. */
+function enqueueMail(task: () => Promise<EmailSendResult>): void {
+  void task().catch((error) => {
+    console.error('[email] Background send failed:', error);
+  });
 }
 
 async function sendMail(options: {
@@ -50,32 +54,39 @@ async function sendMail(options: {
   html: string;
   previewLabel: string;
 }): Promise<EmailSendResult> {
-  if (!isSmtpConfigured()) {
-    console.info(`[email] SMTP not configured. ${options.previewLabel} preview:`);
-    console.info(`To: ${options.to}`);
-    console.info(`Subject: ${options.subject}`);
-    console.info(options.text);
+  const host = env.smtpHost?.trim();
+  const user = env.smtpUser?.trim();
+  const pass = env.smtpPass?.trim();
+  const from = env.smtpFrom?.trim();
 
+  // Email is optional — incomplete/empty SMTP must not block or fail requests.
+  if (!host || !user || !pass || !from) {
     return {
       sent: false,
       skipped: true,
-      message: `${options.previewLabel} preview logged because SMTP is not configured.`,
+      message: `${options.previewLabel} skipped because SMTP is not configured.`,
     };
   }
 
   try {
+    // Prefer IPv4: Render often cannot reach Gmail SMTP over IPv6 (ENETUNREACH).
+    // `family` is supported by nodemailer at runtime but missing from its TS types.
     const transporter = nodemailer.createTransport({
-      host: env.smtpHost,
+      host,
       port: env.smtpPort,
       secure: env.smtpPort === 465,
+      family: 4,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 10_000,
       auth: {
-        user: env.smtpUser,
-        pass: env.smtpPass,
+        user,
+        pass,
       },
-    });
+    } as SMTPTransport.Options);
 
     await transporter.sendMail({
-      from: env.smtpFrom,
+      from,
       to: options.to,
       subject: options.subject,
       text: options.text,
@@ -146,7 +157,7 @@ function buildHtmlEmail(params: {
 </html>`;
 }
 
-export async function sendOrderConfirmationEmail(payload: OrderEmailPayload): Promise<EmailSendResult> {
+export function sendOrderConfirmationEmail(payload: OrderEmailPayload): void {
   const itemLines = formatItemLines(payload.items);
   const subject = `FoodOrder confirmation — ${payload.orderReference}`;
   const text = [
@@ -180,16 +191,18 @@ export async function sendOrderConfirmationEmail(payload: OrderEmailPayload): Pr
     extraNote: 'Track your order anytime in the FoodOrder app.',
   });
 
-  return sendMail({
-    to: payload.to,
-    subject,
-    text,
-    html,
-    previewLabel: 'Order confirmation',
-  });
+  enqueueMail(() =>
+    sendMail({
+      to: payload.to,
+      subject,
+      text,
+      html,
+      previewLabel: 'Order confirmation',
+    }),
+  );
 }
 
-export async function sendOrderDeliveredEmail(payload: OrderStatusEmailPayload): Promise<EmailSendResult> {
+export function sendOrderDeliveredEmail(payload: OrderStatusEmailPayload): void {
   const itemLines = formatItemLines(payload.items);
   const subject = `Your FoodOrder was delivered — ${payload.orderReference}`;
   const text = [
@@ -220,16 +233,18 @@ export async function sendOrderDeliveredEmail(payload: OrderStatusEmailPayload):
     ...(payload.remarks ? { extraNote: `Note: ${payload.remarks}` } : {}),
   });
 
-  return sendMail({
-    to: payload.to,
-    subject,
-    text,
-    html,
-    previewLabel: 'Order delivered email',
-  });
+  enqueueMail(() =>
+    sendMail({
+      to: payload.to,
+      subject,
+      text,
+      html,
+      previewLabel: 'Order delivered email',
+    }),
+  );
 }
 
-export async function sendOrderCancelledEmail(payload: OrderStatusEmailPayload): Promise<EmailSendResult> {
+export function sendOrderCancelledEmail(payload: OrderStatusEmailPayload): void {
   const itemLines = formatItemLines(payload.items);
   const subject = `Your FoodOrder was cancelled — ${payload.orderReference}`;
   const text = [
@@ -263,11 +278,13 @@ export async function sendOrderCancelledEmail(payload: OrderStatusEmailPayload):
     ...(payload.remarks ? { extraNote: `Reason: ${payload.remarks}` } : {}),
   });
 
-  return sendMail({
-    to: payload.to,
-    subject,
-    text,
-    html,
-    previewLabel: 'Order cancelled email',
-  });
+  enqueueMail(() =>
+    sendMail({
+      to: payload.to,
+      subject,
+      text,
+      html,
+      previewLabel: 'Order cancelled email',
+    }),
+  );
 }
