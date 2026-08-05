@@ -32,10 +32,8 @@ export async function connectDatabase(): Promise<void> {
 
     console.log('MongoDB connected successfully.');
   } catch (error) {
-    console.error('Failed to connect to MongoDB.');
+    console.error('Failed to connect to MongoDB. Continuing with in-memory storage.');
     console.error(error);
-
-    process.exit(1);
   }
 }
 

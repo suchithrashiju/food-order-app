@@ -1,9 +1,8 @@
-import { randomUUID } from 'node:crypto';
-
 import mongoose from 'mongoose';
 
 import type { IMenuItemBase } from '@src/models/menu.model';
 import { MenuItem } from '@src/models/menu.model';
+import { inMemoryMenuStore } from '@src/modules/menu/in-memory-menu.store';
 import { notFound } from '@src/utils/httpError';
 
 interface MenuItemPayload {
@@ -13,23 +12,6 @@ interface MenuItemPayload {
   category?: string | undefined;
   imageUrl?: string | undefined;
   isAvailable?: boolean | undefined;
-}
-
-interface InMemoryMenuItem {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  imageUrl?: string | undefined;
-  isAvailable: boolean;
-  isDeleted: boolean;
-  createdBy?: string | undefined;
-  updatedBy?: string | undefined;
-  deletedBy?: string | undefined;
-  deletedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 interface MenuItemResponseSource {
@@ -49,41 +31,12 @@ interface MenuItemResponseSource {
 }
 
 export class MenuItemsService {
-  private readonly inMemoryMenuItems: InMemoryMenuItem[] = [];
-
   seedInMemoryItems(items: ReadonlyArray<IMenuItemBase>): number {
-    if (this.inMemoryMenuItems.some((item) => !item.isDeleted)) {
-      return 0;
-    }
-
-    const now = new Date();
-    const seeded = items.map((item) => {
-      const seededItem: InMemoryMenuItem = {
-        _id: randomUUID(),
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        category: item.category,
-        isAvailable: item.isAvailable,
-        isDeleted: false,
-        createdBy: item.createdBy ?? 'admin',
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      if (item.imageUrl) {
-        seededItem.imageUrl = item.imageUrl;
-      }
-
-      return seededItem;
-    });
-
-    this.inMemoryMenuItems.push(...seeded);
-    return seeded.length;
+    return inMemoryMenuStore.seed(items);
   }
 
   getInMemoryActiveCount(): number {
-    return this.inMemoryMenuItems.filter((item) => !item.isDeleted).length;
+    return inMemoryMenuStore.activeCount();
   }
 
   async listMenuItems(query: unknown): Promise<{ success: boolean; data: unknown[]; count: number }> {
@@ -92,7 +45,9 @@ export class MenuItemsService {
       : undefined;
 
     if (!this.isMongoConnected()) {
-      const filteredItems = this.inMemoryMenuItems.filter((item) => !item.isDeleted && (!category || item.category.toLowerCase().includes(category.toLowerCase())));
+      const filteredItems = inMemoryMenuStore.getAll().filter(
+        (item) => !item.isDeleted && (!category || item.category.toLowerCase().includes(category.toLowerCase())),
+      );
 
       return {
         success: true,
@@ -118,24 +73,28 @@ export class MenuItemsService {
 
   async createMenuItem(input: MenuItemPayload, adminUser?: string): Promise<{ success: boolean; data: unknown }> {
     if (!this.isMongoConnected()) {
-      const item: InMemoryMenuItem = {
-        _id: randomUUID(),
+      const createInput: {
+        name: string;
+        description: string;
+        price: number;
+        category: string;
+        imageUrl?: string;
+        isAvailable: boolean;
+        createdBy?: string;
+      } = {
         name: input.name ?? 'Untitled item',
         description: input.description ?? '',
         price: input.price ?? 0,
         category: input.category ?? 'General',
         isAvailable: input.isAvailable ?? true,
-        isDeleted: false,
         createdBy: adminUser ?? 'admin',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       if (input.imageUrl) {
-        item.imageUrl = input.imageUrl;
+        createInput.imageUrl = input.imageUrl;
       }
 
-      this.inMemoryMenuItems.unshift(item);
+      const item = inMemoryMenuStore.create(createInput);
 
       return {
         success: true,
@@ -164,13 +123,7 @@ export class MenuItemsService {
 
   async updateMenuItem(id: string, input: MenuItemPayload, adminUser?: string): Promise<{ success: boolean; data: unknown }> {
     if (!this.isMongoConnected()) {
-      const item = this.inMemoryMenuItems.find((entry) => entry._id === id && !entry.isDeleted);
-
-      if (!item) {
-        throw notFound('Menu item not found');
-      }
-
-      Object.assign(item, {
+      const item = inMemoryMenuStore.update(id, {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.price !== undefined ? { price: input.price } : {}),
@@ -178,8 +131,11 @@ export class MenuItemsService {
         ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
         ...(input.isAvailable !== undefined ? { isAvailable: input.isAvailable } : {}),
         updatedBy: adminUser ?? 'admin',
-        updatedAt: new Date(),
       });
+
+      if (!item) {
+        throw notFound('Menu item not found');
+      }
 
       return {
         success: true,
@@ -213,16 +169,11 @@ export class MenuItemsService {
 
   async softDeleteMenuItem(id: string, adminUser?: string): Promise<{ success: boolean; data: unknown }> {
     if (!this.isMongoConnected()) {
-      const item = this.inMemoryMenuItems.find((entry) => entry._id === id && !entry.isDeleted);
+      const item = inMemoryMenuStore.softDelete(id, adminUser ?? 'admin');
 
       if (!item) {
         throw notFound('Menu item not found');
       }
-
-      item.isDeleted = true;
-      item.deletedBy = adminUser ?? 'admin';
-      item.deletedAt = new Date();
-      item.updatedAt = new Date();
 
       return {
         success: true,
@@ -262,15 +213,14 @@ export class MenuItemsService {
 
   async changeStatus(id: string, isAvailable: boolean, adminUser?: string): Promise<{ success: boolean; data: unknown }> {
     if (!this.isMongoConnected()) {
-      const item = this.inMemoryMenuItems.find((entry) => entry._id === id && !entry.isDeleted);
+      const item = inMemoryMenuStore.update(id, {
+        isAvailable,
+        updatedBy: adminUser ?? 'admin',
+      });
 
       if (!item) {
         throw notFound('Menu item not found');
       }
-
-      item.isAvailable = isAvailable;
-      item.updatedBy = adminUser ?? 'admin';
-      item.updatedAt = new Date();
 
       return {
         success: true,

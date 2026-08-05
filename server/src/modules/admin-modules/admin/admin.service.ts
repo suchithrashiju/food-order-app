@@ -9,7 +9,6 @@ import { SystemConfig } from '@src/models/systemConfig.model';
 import { User } from '@src/models/user.model';
 import type { AdminLoginInput, SeedAdminInput } from '@src/modules/admin-modules/admin/admin.validation';
 import { menuItemsService } from '@src/modules/admin-modules/menu-items/menuItems.service';
-import { menuRepository } from '@src/modules/menu/menu.repository';
 import { forbidden, unauthorized } from '@src/utils/httpError';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -134,13 +133,10 @@ export class AdminService {
   async seedAdminSetup(): Promise<AdminSeedResponse> {
     if (!this.isMongoConnected()) {
       const menuItemsSeeded = !this.inMemoryAdminSeed.menuItemsSeeded;
+      // Shared in-memory store — seed once for both public menu and admin CRUD.
       const menuItemsAdded = menuItemsSeeded
         ? menuItemsService.seedInMemoryItems([...SEED_MENU_ITEMS])
         : 0;
-
-      if (menuItemsSeeded) {
-        menuRepository.seedInMemoryItems([...SEED_MENU_ITEMS]);
-      }
 
       this.inMemoryAdminSeed.adminSeeded = true;
       this.inMemoryAdminSeed.systemConfigSeeded = true;
