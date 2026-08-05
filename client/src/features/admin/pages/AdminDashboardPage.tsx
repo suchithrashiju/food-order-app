@@ -1,65 +1,19 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 
 import { EmptyState } from '@/components/common/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { getErrorMessage } from '@/lib/api-client'
 import { formatCurrency } from '@/lib/utils'
 import { adminService } from '@/services/admin.service'
 
 export function AdminDashboardPage() {
-  const [token, setToken] = useState(() => localStorage.getItem('foodorder_admin_token'))
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('admin@2026')
-
-  const loginMutation = useMutation({
-    mutationFn: () => adminService.login(username, password),
-    onSuccess: (nextToken) => setToken(nextToken),
-  })
-
   const statsQuery = useQuery({
-    queryKey: ['admin-stats', token],
+    queryKey: ['admin-stats'],
     queryFn: () => adminService.getDashboardStats(),
-    enabled: Boolean(token),
     retry: false,
   })
-
-  if (!token) {
-    return (
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle>Admin login</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="username">Username</Label>
-            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          {loginMutation.isError ? (
-            <p className="text-sm text-red-600" role="alert">
-              {getErrorMessage(loginMutation.error)}
-            </p>
-          ) : null}
-          <Button className="w-full" loading={loginMutation.isPending} onClick={() => loginMutation.mutate()}>
-            Sign in
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
 
   if (statsQuery.isLoading) {
     return <p className="text-slate-500">Loading dashboard…</p>
@@ -70,11 +24,8 @@ export function AdminDashboardPage() {
       <EmptyState
         title="Unable to load dashboard"
         description={getErrorMessage(statsQuery.error)}
-        actionLabel="Sign out and retry"
-        onAction={() => {
-          adminService.logout()
-          setToken(null)
-        }}
+        actionLabel="Retry"
+        onAction={() => void statsQuery.refetch()}
       />
     )
   }
@@ -85,23 +36,12 @@ export function AdminDashboardPage() {
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
           <p className="text-slate-500">Orders overview and quick actions.</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/menu">Manage Menu</Link>
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              adminService.logout()
-              setToken(null)
-            }}
-          >
-            Sign out
-          </Button>
-        </div>
+        <Button asChild variant="outline">
+          <Link to="/admin/menu-items">Manage Menu</Link>
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

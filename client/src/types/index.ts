@@ -81,6 +81,29 @@ export interface AdminDashboardStats {
   recentOrders: Order[]
 }
 
+export interface AdminMenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  imageUrl?: string
+  isAvailable: boolean
+  isDeleted?: boolean
+  createdBy?: string
+  updatedBy?: string
+  deletedBy?: string
+}
+
+export interface AdminMenuItemPayload {
+  name: string
+  description: string
+  price: number
+  category: string
+  imageUrl?: string
+  isAvailable?: boolean
+}
+
 export interface CartItem {
   menuItem: MenuItem
   quantity: number

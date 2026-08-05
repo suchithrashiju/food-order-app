@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 
+import { AdminLayout } from '@/components/layout/AdminLayout'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton'
 
@@ -27,9 +28,19 @@ const TrackOrderPage = lazy(() =>
     default: module.TrackOrderPage,
   })),
 )
+const AdminLoginPage = lazy(() =>
+  import('@/features/admin/pages/AdminLoginPage').then((module) => ({
+    default: module.AdminLoginPage,
+  })),
+)
 const AdminDashboardPage = lazy(() =>
   import('@/features/admin/pages/AdminDashboardPage').then((module) => ({
     default: module.AdminDashboardPage,
+  })),
+)
+const AdminMenuItemsPage = lazy(() =>
+  import('@/features/admin/pages/AdminMenuItemsPage').then((module) => ({
+    default: module.AdminMenuItemsPage,
   })),
 )
 const NotFoundPage = lazy(() =>
@@ -102,7 +113,33 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'admin',
+        path: '*',
+        element: (
+          <SuspensePage>
+            <NotFoundPage />
+          </SuspensePage>
+        ),
+      },
+    ],
+  },
+  {
+    path: '/admin/login',
+    element: (
+      <SuspensePage>
+        <AdminLoginPage />
+      </SuspensePage>
+    ),
+  },
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
+      {
+        index: true,
+        element: <Navigate to="orders" replace />,
+      },
+      {
+        path: 'orders',
         element: (
           <SuspensePage>
             <AdminDashboardPage />
@@ -110,10 +147,10 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: '*',
+        path: 'menu-items',
         element: (
           <SuspensePage>
-            <NotFoundPage />
+            <AdminMenuItemsPage />
           </SuspensePage>
         ),
       },
