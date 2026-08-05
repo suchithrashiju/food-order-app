@@ -1,5 +1,11 @@
+import { clearAdminToken, setAdminToken } from '@/lib/admin-auth'
 import { apiClient } from '@/lib/api-client'
-import type { AdminDashboardStats, MenuItem, Order } from '@/types'
+import type {
+  AdminDashboardStats,
+  AdminMenuItem,
+  AdminMenuItemPayload,
+  Order,
+} from '@/types'
 
 interface LoginResponse {
   success: boolean
@@ -17,12 +23,12 @@ export const adminService = {
       password,
     })
     const token = response.data.data.token
-    localStorage.setItem('foodorder_admin_token', token)
+    setAdminToken(token)
     return token
   },
 
   logout(): void {
-    localStorage.removeItem('foodorder_admin_token')
+    clearAdminToken()
   },
 
   async getDashboardStats(): Promise<AdminDashboardStats> {
@@ -37,9 +43,41 @@ export const adminService = {
     return response.data.data
   },
 
-  async listMenuItems(): Promise<MenuItem[]> {
-    const response = await apiClient.get<{ success: boolean; data: MenuItem[] }>(
+  async listMenuItems(category?: string): Promise<AdminMenuItem[]> {
+    const response = await apiClient.get<{ success: boolean; data: AdminMenuItem[] }>(
       '/api/admin/menu-items',
+      { params: category ? { category } : undefined },
+    )
+    return response.data.data
+  },
+
+  async createMenuItem(payload: AdminMenuItemPayload): Promise<AdminMenuItem> {
+    const response = await apiClient.post<{ success: boolean; data: AdminMenuItem }>(
+      '/api/admin/menu-items',
+      payload,
+    )
+    return response.data.data
+  },
+
+  async updateMenuItem(
+    id: string,
+    payload: Partial<AdminMenuItemPayload>,
+  ): Promise<AdminMenuItem> {
+    const response = await apiClient.patch<{ success: boolean; data: AdminMenuItem }>(
+      `/api/admin/menu-items/${id}`,
+      payload,
+    )
+    return response.data.data
+  },
+
+  async deleteMenuItem(id: string): Promise<void> {
+    await apiClient.delete(`/api/admin/menu-items/${id}`)
+  },
+
+  async changeMenuItemStatus(id: string, isAvailable: boolean): Promise<AdminMenuItem> {
+    const response = await apiClient.patch<{ success: boolean; data: AdminMenuItem }>(
+      `/api/admin/menu-items/${id}/status`,
+      { isAvailable },
     )
     return response.data.data
   },
