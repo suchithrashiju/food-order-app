@@ -1,10 +1,10 @@
 import cors from 'cors';
 import express from 'express';
 
-import { env } from './config/env.js';
-import { errorMiddleware } from './middlewares/error.middleware.js';
-import { notFoundMiddleware } from './middlewares/notFound.middleware.js';
-import router from './routes/index.js';
+import { env } from '@src/config/env';
+import { errorMiddleware } from '@src/middlewares/error.middleware';
+import { notFoundMiddleware } from '@src/middlewares/notFound.middleware';
+import router from '@src/routes/index';
 
 const app = express();
 

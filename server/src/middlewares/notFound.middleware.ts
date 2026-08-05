@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { HttpError } from '@src/utils/httpError';
+
 export function notFoundMiddleware(req: Request, _res: Response, next: NextFunction): void {
-  const error = new Error(`Route not found: ${req.originalUrl}`) as Error & { statusCode?: number };
-  error.statusCode = 404;
-  next(error);
+  next(new HttpError(404, `Route not found: ${req.originalUrl}`));
 }
