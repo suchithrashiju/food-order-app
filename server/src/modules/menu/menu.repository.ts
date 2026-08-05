@@ -1,9 +1,8 @@
-import { randomUUID } from 'node:crypto';
-
 import mongoose from 'mongoose';
 
 import { SEED_MENU_ITEMS } from '@src/data/menu.seed';
 import { MenuItem, type IMenuItemBase } from '@src/models/menu.model';
+import { inMemoryMenuStore, type InMemoryMenuItem } from '@src/modules/menu/in-memory-menu.store';
 import type { GetMenuItemsQuery } from '@src/modules/menu/menu.validation';
 
 type MenuItemEntity = {
@@ -21,38 +20,9 @@ type MenuItemEntity = {
   updatedAt: Date;
 };
 
-let memoryMenuItems: MenuItemEntity[] = [];
-
 export class MenuRepository {
   seedInMemoryItems(items: ReadonlyArray<IMenuItemBase>): number {
-    if (memoryMenuItems.some((item) => !item.isDeleted)) {
-      return 0;
-    }
-
-    const now = new Date();
-    memoryMenuItems = items.map((item) => {
-      const seededItem: MenuItemEntity = {
-        _id: randomUUID(),
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        category: item.category,
-        isAvailable: item.isAvailable,
-        rating: item.rating ?? 4.5,
-        preparationTime: item.preparationTime ?? 20,
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      if (item.imageUrl) {
-        seededItem.imageUrl = item.imageUrl;
-      }
-
-      return seededItem;
-    });
-
-    return memoryMenuItems.length;
+    return inMemoryMenuStore.seed(items);
   }
 
   async ensureSeeded(): Promise<void> {
@@ -72,7 +42,7 @@ export class MenuRepository {
       return;
     }
 
-    if (memoryMenuItems.some((item) => !item.isDeleted)) {
+    if (inMemoryMenuStore.hasActiveItems()) {
       return;
     }
 
@@ -92,7 +62,10 @@ export class MenuRepository {
 
   async findById(id: string): Promise<MenuItemEntity | null> {
     if (!this.isMongoConnected()) {
-      return memoryMenuItems.find((item) => item._id === id && !item.isDeleted && item.isAvailable) ?? null;
+      const item = inMemoryMenuStore.getAll().find(
+        (entry) => entry._id === id && !entry.isDeleted && entry.isAvailable,
+      );
+      return item ? this.fromMemory(item) : null;
     }
 
     const item = await MenuItem.findOne({ _id: id, isDeleted: false, isAvailable: true }).exec();
@@ -100,17 +73,20 @@ export class MenuRepository {
   }
 
   private findAllInMemory(query: GetMenuItemsQuery): MenuItemEntity[] {
-    return memoryMenuItems.filter((item) => {
-      if (item.isDeleted || !item.isAvailable) {
-        return false;
-      }
+    return inMemoryMenuStore
+      .getAll()
+      .filter((item) => {
+        if (item.isDeleted || !item.isAvailable) {
+          return false;
+        }
 
-      if (!query.category) {
-        return true;
-      }
+        if (!query.category) {
+          return true;
+        }
 
-      return item.category.toLowerCase().includes(query.category.toLowerCase());
-    });
+        return item.category.toLowerCase().includes(query.category.toLowerCase());
+      })
+      .map((item) => this.fromMemory(item));
   }
 
   private buildFilter(query: GetMenuItemsQuery): Record<string, unknown> {
@@ -128,6 +104,28 @@ export class MenuRepository {
 
   private isMongoConnected(): boolean {
     return mongoose.connection.readyState === 1;
+  }
+
+  private fromMemory(item: InMemoryMenuItem): MenuItemEntity {
+    const entity: MenuItemEntity = {
+      _id: item._id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      isAvailable: item.isAvailable,
+      rating: item.rating,
+      preparationTime: item.preparationTime,
+      isDeleted: item.isDeleted,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    };
+
+    if (item.imageUrl) {
+      entity.imageUrl = item.imageUrl;
+    }
+
+    return entity;
   }
 
   private toEntity(item: {

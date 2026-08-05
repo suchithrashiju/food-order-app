@@ -4,6 +4,7 @@ import type { Server as SocketIOServer } from 'socket.io';
 import mongoose from 'mongoose';
 
 import { Order, type IOrderBase, type IStatusHistoryEntry, type OrderStatus } from '@src/models/order.model';
+import { emitOrderStatusUpdate } from '@src/modules/order/order.socket';
 import type { CreateOrderInput } from '@src/modules/order/order.validation';
 import {
   sendOrderCancelledEmail,
@@ -217,10 +218,11 @@ export class OrderService {
       order.status = status;
       order.statusHistory = [...(order.statusHistory ?? []), historyEntry];
       order.updatedAt = new Date();
-      io?.to(`order:${order._id}`).emit('order:status', {
-        orderId: order._id,
+      emitOrderStatusUpdate(
+        io,
+        { orderId: order._id, orderReference: order.orderReference },
         status,
-      });
+      );
 
       const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
       return { success: true, data: this.toResponse(order, emailNotification) };
@@ -257,10 +259,11 @@ export class OrderService {
     order.statusHistory.push(historyEntry);
     await order.save();
 
-    io?.to(`order:${order._id.toString()}`).emit('order:status', {
-      orderId: order._id.toString(),
+    emitOrderStatusUpdate(
+      io,
+      { orderId: order._id.toString(), orderReference: order.orderReference },
       status,
-    });
+    );
 
     const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
     return { success: true, data: this.toResponse(order, emailNotification) };
