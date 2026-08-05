@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { OrderTimeline } from '@/features/order/components/OrderTimeline'
+import { useOrderStatusSocket } from '@/hooks/useOrderStatusSocket'
 import { getErrorMessage } from '@/lib/api-client'
 import { orderService } from '@/services/order.service'
 import { isOrderClosed, type OrderStatus } from '@/utils/order-status'
@@ -42,11 +43,18 @@ export function TrackOrderPage() {
     queryKey: ['order', activeId],
     queryFn: () => orderService.getOrderById(activeId),
     enabled: Boolean(activeId),
+    // Polling is a fallback; Socket.IO pushes status changes when connected.
     refetchInterval: (query) => {
       const status = query.state.data?.status
-      return status && !isOrderClosed(status) ? 4000 : false
+      return status && !isOrderClosed(status) ? 8000 : false
     },
   })
+
+  useOrderStatusSocket(
+    activeId || undefined,
+    orderQuery.data?.id,
+    orderQuery.data?.status as OrderStatus | undefined,
+  )
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -74,7 +82,8 @@ export function TrackOrderPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Track Order</h1>
         <p className="mt-1 text-slate-500 dark:text-slate-400">
-          Enter your order reference number to follow live status updates.
+          Enter your order reference number to follow live status updates (Socket.IO +
+          simulated back-end progression).
         </p>
       </header>
 
