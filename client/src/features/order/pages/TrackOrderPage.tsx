@@ -52,7 +52,6 @@ export function TrackOrderPage() {
 
   useOrderStatusSocket(
     activeId || undefined,
-    orderQuery.data?.id,
     orderQuery.data?.status as OrderStatus | undefined,
   )
 

@@ -4,11 +4,16 @@ import type { OrderStatus } from '@/types'
 
 export interface OrderStatusEvent {
   orderId: string
+  orderReference?: string
   status: OrderStatus
   updatedAt?: string
 }
 
 function getSocketBaseUrl(): string {
+  const socketUrl = import.meta.env.VITE_SOCKET_URL?.trim()
+  if (socketUrl) {
+    return socketUrl.replace(/\/$/, '')
+  }
   const apiUrl = import.meta.env.VITE_API_URL?.trim()
   if (apiUrl) {
     return apiUrl.replace(/\/$/, '')

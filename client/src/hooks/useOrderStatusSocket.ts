@@ -19,7 +19,10 @@ export function useOrderStatusSocket(orderId: string | undefined, status?: Order
     const socket = getOrderSocket()
 
     const onStatus = (payload: OrderStatusEvent) => {
-      if (payload.orderId !== orderId) {
+      const matches =
+        payload.orderId === orderId ||
+        (payload.orderReference != null && payload.orderReference === orderId)
+      if (!matches) {
         return
       }
       void queryClient.invalidateQueries({ queryKey: ['order', orderId] })

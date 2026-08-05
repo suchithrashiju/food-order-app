@@ -218,7 +218,11 @@ export class OrderService {
       order.status = status;
       order.statusHistory = [...(order.statusHistory ?? []), historyEntry];
       order.updatedAt = new Date();
-      emitOrderStatusUpdate(io, order._id, status);
+      emitOrderStatusUpdate(
+        io,
+        { orderId: order._id, orderReference: order.orderReference },
+        status,
+      );
 
       const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
       return { success: true, data: this.toResponse(order, emailNotification) };
@@ -255,7 +259,11 @@ export class OrderService {
     order.statusHistory.push(historyEntry);
     await order.save();
 
-    emitOrderStatusUpdate(io, order._id.toString(), status);
+    emitOrderStatusUpdate(
+      io,
+      { orderId: order._id.toString(), orderReference: order.orderReference },
+      status,
+    );
 
     const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
     return { success: true, data: this.toResponse(order, emailNotification) };
