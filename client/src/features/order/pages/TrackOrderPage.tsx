@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { Clock, MapPin, Package, Receipt, RefreshCw, User } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { Clock, RefreshCw } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { EmptyState } from '@/components/common/EmptyState'
@@ -11,11 +11,7 @@ import { Label } from '@/components/ui/label'
 import { OrderTimeline } from '@/features/order/components/OrderTimeline'
 import { getErrorMessage } from '@/lib/api-client'
 import { orderService } from '@/services/order.service'
-import type { OrderStatus } from '@/types'
-
-function fmt(amount: number) {
-  return `₹${amount.toFixed(2)}`
-}
+import { isOrderClosed, type OrderStatus } from '@/utils/order-status'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('en-IN', {
@@ -29,6 +25,7 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   Preparing: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   'Out for Delivery': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
   Delivered: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  Cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 }
 
 export function TrackOrderPage() {
@@ -37,13 +34,17 @@ export function TrackOrderPage() {
   const [inputId, setInputId] = useState(routeOrderId ?? '')
   const activeId = routeOrderId ?? ''
 
+  useEffect(() => {
+    setInputId(routeOrderId ?? '')
+  }, [routeOrderId])
+
   const orderQuery = useQuery({
     queryKey: ['order', activeId],
     queryFn: () => orderService.getOrderById(activeId),
     enabled: Boolean(activeId),
     refetchInterval: (query) => {
       const status = query.state.data?.status
-      return status && status !== 'Delivered' ? 4000 : false
+      return status && !isOrderClosed(status) ? 4000 : false
     },
   })
 
@@ -55,7 +56,18 @@ export function TrackOrderPage() {
     }
   }
 
+  const onClear = () => {
+    setInputId('')
+    navigate('/track')
+  }
+
   const order = orderQuery.data
+  const cancellationReason =
+    order?.status === 'Cancelled'
+      ? [...(order.statusHistory ?? [])]
+          .reverse()
+          .find((entry) => entry.status === 'Cancelled')?.remarks
+      : undefined
 
   return (
     <section className="mx-auto max-w-2xl space-y-6">
@@ -66,7 +78,6 @@ export function TrackOrderPage() {
         </p>
       </header>
 
-      {/* Search form */}
       <Card>
         <CardContent className="p-5">
           <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onSubmit}>
@@ -80,14 +91,21 @@ export function TrackOrderPage() {
                 className="font-mono uppercase"
               />
             </div>
-            <Button type="submit" className="sm:shrink-0">
-              Track Order
-            </Button>
+            <div className="flex gap-2 sm:shrink-0">
+              <Button type="submit">Track Order</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClear}
+                disabled={!inputId && !activeId}
+              >
+                Clear
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Empty state */}
       {!activeId && (
         <EmptyState
           title="No order selected"
@@ -95,7 +113,6 @@ export function TrackOrderPage() {
         />
       )}
 
-      {/* Loading */}
       {activeId && orderQuery.isLoading && (
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <RefreshCw className="h-4 w-4 animate-spin" />
@@ -103,7 +120,6 @@ export function TrackOrderPage() {
         </div>
       )}
 
-      {/* Error */}
       {activeId && orderQuery.isError && (
         <EmptyState
           title="Order not found"
@@ -113,10 +129,8 @@ export function TrackOrderPage() {
         />
       )}
 
-      {/* Order details */}
       {order && (
         <div className="space-y-4">
-          {/* Reference + status header */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-slate-700 dark:bg-slate-900">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
@@ -136,7 +150,6 @@ export function TrackOrderPage() {
             </span>
           </div>
 
-          {/* Timeline */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -145,87 +158,16 @@ export function TrackOrderPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <OrderTimeline currentStatus={order.status as OrderStatus} />
-              {order.status !== 'Delivered' && (
+              <OrderTimeline
+                currentStatus={order.status as OrderStatus}
+                cancellationReason={cancellationReason}
+              />
+              {!isOrderClosed(order.status as OrderStatus) && (
                 <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                   Estimated delivery in{' '}
                   <strong className="text-slate-700 dark:text-slate-200">
                     {order.estimatedDeliveryMinutes} minutes
                   </strong>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Items + price */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Package className="h-4 w-4 text-primary" />
-                Items Ordered
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2">
-                {order.items.map((item, i) => (
-                  <li key={i} className="flex justify-between text-sm">
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {item.name}
-                      <span className="ml-1 text-slate-400">× {item.quantity}</span>
-                    </span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
-                      {fmt(item.price * item.quantity)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="space-y-1.5 border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
-                <div className="flex justify-between text-slate-500">
-                  <span>Subtotal</span>
-                  <span>{fmt(order.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>Delivery fee</span>
-                  <span>{fmt(order.deliveryFee)}</span>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>Tax</span>
-                  <span>{fmt(order.tax)}</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900 dark:border-slate-700 dark:text-white">
-                  <span>Total</span>
-                  <span className="text-primary">{fmt(order.total)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Delivery info */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MapPin className="h-4 w-4 text-primary" />
-                Delivery Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 shrink-0 text-slate-400" />
-                <span>{order.delivery.name}</span>
-                {order.delivery.phone && (
-                  <span className="text-slate-400">· {order.delivery.phone}</span>
-                )}
-              </div>
-              <div className="flex items-start gap-2">
-                <Receipt className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-                <span>
-                  {order.delivery.address}, {order.delivery.city} – {order.delivery.postalCode}
-                </span>
-              </div>
-              {order.delivery.notes && (
-                <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800">
-                  Note: {order.delivery.notes}
                 </p>
               )}
             </CardContent>

@@ -66,6 +66,7 @@ export function CheckoutPage() {
         to={`/orders/${placedOrder.id}/success`}
         replace
         state={{
+          order: placedOrder,
           orderReference: placedOrder.orderReference,
           emailNotification: placedOrder.emailNotification,
         }}

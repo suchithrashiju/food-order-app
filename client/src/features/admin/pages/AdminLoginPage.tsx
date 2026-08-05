@@ -22,15 +22,18 @@ export function AdminLoginPage() {
     'from' in location.state &&
     typeof (location.state as { from?: unknown }).from === 'string'
       ? (location.state as { from: string }).from
-      : '/admin/orders'
+      : '/admin'
+
+  const redirectTo =
+    from.startsWith('/admin') && from !== '/admin/login' ? from : '/admin'
 
   const loginMutation = useMutation({
     mutationFn: () => adminService.login(username, password),
-    onSuccess: () => navigate(from.startsWith('/admin') ? from : '/admin/orders', { replace: true }),
+    onSuccess: () => navigate(redirectTo, { replace: true }),
   })
 
   if (isAdminLoggedIn()) {
-    return <Navigate to="/admin/orders" replace />
+    return <Navigate to="/admin" replace />
   }
 
   return (

@@ -23,6 +23,7 @@ export type OrderStatus =
   | 'Preparing'
   | 'Out for Delivery'
   | 'Delivered'
+  | 'Cancelled'
 
 export interface OrderItem {
   menuItemId: string
@@ -47,12 +48,20 @@ export interface EmailNotification {
   message: string
 }
 
+export interface OrderStatusHistoryEntry {
+  status: OrderStatus
+  remarks?: string
+  updatedBy: string
+  updatedAt: string
+}
+
 export interface Order {
   id: string
   orderReference: string
   items: OrderItem[]
   delivery: DeliveryDetails
   status: OrderStatus
+  statusHistory?: OrderStatusHistoryEntry[]
   subtotal: number
   deliveryFee: number
   tax: number
@@ -75,9 +84,11 @@ export interface OrderResponse {
 
 export interface AdminDashboardStats {
   totalOrders: number
+  todaysOrders: number
   todaysRevenue: number
   pendingOrders: number
   completedOrders: number
+  cancelledOrders: number
   recentOrders: Order[]
 }
 

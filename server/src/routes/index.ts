@@ -33,6 +33,7 @@ router.post('/admin/seed', adminController.seed.bind(adminController));
 router.get('/admin/dashboard', adminAuthMiddleware, adminController.getDashboard.bind(adminController));
 router.get('/admin/orders/stats', adminAuthMiddleware, orderController.dashboard.bind(orderController));
 router.get('/admin/orders', adminAuthMiddleware, orderController.list.bind(orderController));
+router.patch('/admin/orders/:id/status', adminAuthMiddleware, orderController.updateStatus.bind(orderController));
 
 router.get('/admin/menu-items', adminAuthMiddleware, menuItemsController.list.bind(menuItemsController));
 router.post('/admin/menu-items', adminAuthMiddleware, menuItemsController.create.bind(menuItemsController));
