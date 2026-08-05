@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ORDER_STATUSES } from '@src/models/order.model';
+
 const optionalEmailSchema = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.string().trim().email('Enter a valid email address').optional(),
@@ -44,4 +46,12 @@ export const orderIdParamSchema = z
   })
   .strict();
 
+export const updateOrderStatusSchema = z
+  .object({
+    status: z.enum(ORDER_STATUSES),
+    remarks: z.string().trim().max(500).optional().or(z.literal('')),
+  })
+  .strict();
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;

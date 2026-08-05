@@ -5,9 +5,18 @@ export const ORDER_STATUSES = [
   'Preparing',
   'Out for Delivery',
   'Delivered',
+  'Cancelled',
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/** Normal delivery flow — excludes Cancelled */
+export const ORDER_PROGRESS_STATUSES = [
+  'Order Received',
+  'Preparing',
+  'Out for Delivery',
+  'Delivered',
+] as const;
 
 export interface IOrderItem {
   menuItemId: string;
@@ -26,11 +35,19 @@ export interface IDeliveryDetails {
   notes?: string;
 }
 
+export interface IStatusHistoryEntry {
+  status: OrderStatus;
+  remarks?: string;
+  updatedBy: string;
+  updatedAt: Date;
+}
+
 export interface IOrderBase {
   orderReference: string;
   items: IOrderItem[];
   delivery: IDeliveryDetails;
   status: OrderStatus;
+  statusHistory: IStatusHistoryEntry[];
   subtotal: number;
   deliveryFee: number;
   tax: number;
@@ -66,6 +83,16 @@ const deliverySchema = new Schema<IDeliveryDetails>(
   { _id: false },
 );
 
+const statusHistorySchema = new Schema<IStatusHistoryEntry>(
+  {
+    status: { type: String, enum: ORDER_STATUSES, required: true },
+    remarks: { type: String, trim: true, maxlength: 500 },
+    updatedBy: { type: String, required: true, trim: true },
+    updatedAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: false },
+);
+
 const orderSchema = new Schema<IOrder>(
   {
     orderReference: { type: String, required: true, unique: true, trim: true, uppercase: true },
@@ -75,6 +102,10 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       enum: ORDER_STATUSES,
       default: 'Order Received',
+    },
+    statusHistory: {
+      type: [statusHistorySchema],
+      default: [],
     },
     subtotal: { type: Number, required: true, min: 0 },
     deliveryFee: { type: Number, required: true, min: 0 },

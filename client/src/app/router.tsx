@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter } from 'react-router'
 
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -38,9 +38,24 @@ const AdminDashboardPage = lazy(() =>
     default: module.AdminDashboardPage,
   })),
 )
+const AdminOrdersPage = lazy(() =>
+  import('@/features/admin/pages/AdminOrdersPage').then((module) => ({
+    default: module.AdminOrdersPage,
+  })),
+)
+const AdminOrderDetailPage = lazy(() =>
+  import('@/features/admin/pages/AdminOrderDetailPage').then((module) => ({
+    default: module.AdminOrderDetailPage,
+  })),
+)
 const AdminMenuItemsPage = lazy(() =>
   import('@/features/admin/pages/AdminMenuItemsPage').then((module) => ({
     default: module.AdminMenuItemsPage,
+  })),
+)
+const AdminMenuItemDetailPage = lazy(() =>
+  import('@/features/admin/pages/AdminMenuItemDetailPage').then((module) => ({
+    default: module.AdminMenuItemDetailPage,
   })),
 )
 const NotFoundPage = lazy(() =>
@@ -136,13 +151,25 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="orders" replace />,
+        element: (
+          <SuspensePage>
+            <AdminDashboardPage />
+          </SuspensePage>
+        ),
       },
       {
         path: 'orders',
         element: (
           <SuspensePage>
-            <AdminDashboardPage />
+            <AdminOrdersPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'orders/:orderId',
+        element: (
+          <SuspensePage>
+            <AdminOrderDetailPage />
           </SuspensePage>
         ),
       },
@@ -151,6 +178,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspensePage>
             <AdminMenuItemsPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'menu-items/:itemId',
+        element: (
+          <SuspensePage>
+            <AdminMenuItemDetailPage />
           </SuspensePage>
         ),
       },

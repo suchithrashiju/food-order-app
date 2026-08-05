@@ -43,12 +43,38 @@ export const adminService = {
     return response.data.data
   },
 
+  async getOrderById(id: string): Promise<Order> {
+    const response = await apiClient.get<{ success: boolean; data: Order }>(`/api/orders/${id}`)
+    return response.data.data
+  },
+
+  async updateOrderStatus(
+    id: string,
+    status: Order['status'],
+    remarks?: string,
+  ): Promise<Order> {
+    const response = await apiClient.patch<{ success: boolean; data: Order }>(
+      `/api/admin/orders/${id}/status`,
+      { status, remarks: remarks?.trim() || undefined },
+    )
+    return response.data.data
+  },
+
   async listMenuItems(category?: string): Promise<AdminMenuItem[]> {
     const response = await apiClient.get<{ success: boolean; data: AdminMenuItem[] }>(
       '/api/admin/menu-items',
       { params: category ? { category } : undefined },
     )
     return response.data.data
+  },
+
+  async getMenuItemById(id: string): Promise<AdminMenuItem> {
+    const items = await this.listMenuItems()
+    const item = items.find((entry) => entry.id === id)
+    if (!item) {
+      throw new Error('Menu item not found')
+    }
+    return item
   },
 
   async createMenuItem(payload: AdminMenuItemPayload): Promise<AdminMenuItem> {
