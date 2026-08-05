@@ -40,5 +40,9 @@
     "node_modules",
     "dist",
     "src/tests"
-  ]
+  ],
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "resolveFullExtension": ".js"
+  }
 }
