@@ -13,10 +13,10 @@ export function CategoryChip({ label, active = false, onClick }: CategoryChipPro
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'rounded-full border px-4 py-2 text-sm font-medium transition',
+        'cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition',
         active
-          ? 'border-primary bg-primary text-white'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-primary/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200',
+          ? 'border-primary bg-primary text-white shadow-sm'
+          : 'border-slate-200 bg-white text-slate-700 hover:border-primary/40 hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800',
       )}
     >
       {label}
