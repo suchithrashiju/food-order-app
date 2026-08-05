@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 
 import { adminAuthMiddleware } from '@src/middlewares/adminAuth.middleware';
 import { adminController } from '@src/modules/admin-modules/admin/admin.controller';
@@ -8,14 +8,14 @@ import { orderController } from '@src/modules/order/order.controller';
 
 const router = Router();
 
-router.get('/health', (_req, res) => {
+router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Server is healthy',
   });
 });
 
-router.get('/', (_req, res) => {
+router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Food Order API is running',
