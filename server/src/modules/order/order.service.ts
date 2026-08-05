@@ -10,7 +10,6 @@ import {
   sendOrderCancelledEmail,
   sendOrderConfirmationEmail,
   sendOrderDeliveredEmail,
-  type EmailSendResult,
 } from '@src/services/email.service';
 import { badRequest, notFound } from '@src/utils/httpError';
 import { generateOrderReference } from '@src/utils/orderReference';
@@ -39,7 +38,6 @@ interface OrderResponse {
   estimatedDeliveryMinutes: number;
   createdAt: string;
   updatedAt: string;
-  emailNotification?: EmailSendResult;
 }
 
 interface InMemoryOrder extends IOrderBase {
@@ -132,10 +130,9 @@ export class OrderService {
       savedOrder = order;
     }
 
-    let emailNotification: EmailSendResult | undefined;
-
+    // Email is optional and must never delay the API response.
     if (email) {
-      emailNotification = await sendOrderConfirmationEmail({
+      sendOrderConfirmationEmail({
         to: email,
         customerName: input.delivery.name,
         orderReference,
@@ -147,7 +144,7 @@ export class OrderService {
 
     return {
       success: true,
-      data: this.toResponse(savedOrder, emailNotification),
+      data: this.toResponse(savedOrder),
     };
   }
 
@@ -224,8 +221,8 @@ export class OrderService {
         status,
       );
 
-      const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
-      return { success: true, data: this.toResponse(order, emailNotification) };
+      this.queueStatusUpdateEmail(order, status, trimmedRemarks);
+      return { success: true, data: this.toResponse(order) };
     }
 
     let order = null;
@@ -265,8 +262,8 @@ export class OrderService {
       status,
     );
 
-    const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
-    return { success: true, data: this.toResponse(order, emailNotification) };
+    this.queueStatusUpdateEmail(order, status, trimmedRemarks);
+    return { success: true, data: this.toResponse(order) };
   }
 
   async listOrders(): Promise<{ success: boolean; data: OrderResponse[]; count: number }> {
@@ -316,7 +313,7 @@ export class OrderService {
     };
   }
 
-  private async sendStatusUpdateEmail(
+  private queueStatusUpdateEmail(
     order: {
       orderReference: string;
       items: IOrderBase['items'];
@@ -325,14 +322,14 @@ export class OrderService {
     },
     status: OrderStatus,
     remarks?: string,
-  ): Promise<EmailSendResult | undefined> {
+  ): void {
     const email = order.delivery.email?.trim();
     if (!email) {
-      return undefined;
+      return;
     }
 
     if (status !== 'Delivered' && status !== 'Cancelled') {
-      return undefined;
+      return;
     }
 
     const payload = {
@@ -345,30 +342,28 @@ export class OrderService {
     };
 
     if (status === 'Delivered') {
-      return sendOrderDeliveredEmail(payload);
+      sendOrderDeliveredEmail(payload);
+      return;
     }
 
-    return sendOrderCancelledEmail(payload);
+    sendOrderCancelledEmail(payload);
   }
 
-  private toResponse(
-    order: {
-      _id: string | { toString(): string };
-      orderReference: string;
-      items: IOrderBase['items'];
-      delivery: IOrderBase['delivery'];
-      status: OrderStatus;
-      statusHistory?: IStatusHistoryEntry[];
-      subtotal: number;
-      deliveryFee: number;
-      tax: number;
-      total: number;
-      estimatedDeliveryMinutes: number;
-      createdAt: Date;
-      updatedAt: Date;
-    },
-    emailNotification?: EmailSendResult,
-  ): OrderResponse {
+  private toResponse(order: {
+    _id: string | { toString(): string };
+    orderReference: string;
+    items: IOrderBase['items'];
+    delivery: IOrderBase['delivery'];
+    status: OrderStatus;
+    statusHistory?: IStatusHistoryEntry[];
+    subtotal: number;
+    deliveryFee: number;
+    tax: number;
+    total: number;
+    estimatedDeliveryMinutes: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }): OrderResponse {
     const history = (order.statusHistory ?? []).map((entry) => ({
       status: entry.status,
       ...(entry.remarks ? { remarks: entry.remarks } : {}),
@@ -393,7 +388,6 @@ export class OrderService {
       estimatedDeliveryMinutes: order.estimatedDeliveryMinutes,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
-      ...(emailNotification ? { emailNotification } : {}),
     };
   }
 
