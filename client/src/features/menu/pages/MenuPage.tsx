@@ -121,7 +121,7 @@ export function MenuPage() {
           <Input
             type="number"
             min={0}
-            step="0.01"
+            step="1"
             placeholder="e.g. 12"
             value={maxPrice}
             onChange={(event) => setMaxPrice(event.target.value)}
