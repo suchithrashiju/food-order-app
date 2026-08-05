@@ -59,7 +59,8 @@ function getNumericEnvValue(key: string, fallback: number): number {
 const seedSecret = getOptionalEnvValue('SEED_SECRET');
 const smtpHost = getOptionalEnvValue('SMTP_HOST');
 const smtpUser = getOptionalEnvValue('SMTP_USER');
-const smtpPass = getOptionalEnvValue('SMTP_PASS');
+const smtpPass =
+  getOptionalEnvValue('SMTP_PASSWORD') ?? getOptionalEnvValue('SMTP_PASS');
 const smtpFrom = getOptionalEnvValue('SMTP_FROM');
 
 export const env: EnvConfig = {

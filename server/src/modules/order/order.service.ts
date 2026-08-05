@@ -5,7 +5,12 @@ import mongoose from 'mongoose';
 
 import { Order, type IOrderBase, type IStatusHistoryEntry, type OrderStatus } from '@src/models/order.model';
 import type { CreateOrderInput } from '@src/modules/order/order.validation';
-import { sendOrderConfirmationEmail, type EmailSendResult } from '@src/services/email.service';
+import {
+  sendOrderCancelledEmail,
+  sendOrderConfirmationEmail,
+  sendOrderDeliveredEmail,
+  type EmailSendResult,
+} from '@src/services/email.service';
 import { badRequest, notFound } from '@src/utils/httpError';
 import { generateOrderReference } from '@src/utils/orderReference';
 
@@ -216,7 +221,9 @@ export class OrderService {
         orderId: order._id,
         status,
       });
-      return { success: true, data: this.toResponse(order) };
+
+      const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
+      return { success: true, data: this.toResponse(order, emailNotification) };
     }
 
     let order = null;
@@ -255,7 +262,8 @@ export class OrderService {
       status,
     });
 
-    return { success: true, data: this.toResponse(order) };
+    const emailNotification = await this.sendStatusUpdateEmail(order, status, trimmedRemarks);
+    return { success: true, data: this.toResponse(order, emailNotification) };
   }
 
   async listOrders(): Promise<{ success: boolean; data: OrderResponse[]; count: number }> {
@@ -303,6 +311,41 @@ export class OrderService {
         recentOrders: orders.slice(0, 10),
       },
     };
+  }
+
+  private async sendStatusUpdateEmail(
+    order: {
+      orderReference: string;
+      items: IOrderBase['items'];
+      delivery: IOrderBase['delivery'];
+      total: number;
+    },
+    status: OrderStatus,
+    remarks?: string,
+  ): Promise<EmailSendResult | undefined> {
+    const email = order.delivery.email?.trim();
+    if (!email) {
+      return undefined;
+    }
+
+    if (status !== 'Delivered' && status !== 'Cancelled') {
+      return undefined;
+    }
+
+    const payload = {
+      to: email,
+      customerName: order.delivery.name,
+      orderReference: order.orderReference,
+      total: order.total,
+      items: order.items,
+      ...(remarks ? { remarks } : {}),
+    };
+
+    if (status === 'Delivered') {
+      return sendOrderDeliveredEmail(payload);
+    }
+
+    return sendOrderCancelledEmail(payload);
   }
 
   private toResponse(
