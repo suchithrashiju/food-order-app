@@ -74,16 +74,17 @@ async function sendMail(options: {
     const transporter = nodemailer.createTransport({
       host,
       port: env.smtpPort,
-      secure: env.smtpPort === 465,
+      secure: false,
       family: 4,
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 10_000,
+      requireTLS: true,
       auth: {
         user,
         pass,
       },
     } as SMTPTransport.Options);
+
+    await transporter.verify();
+    console.log("SMTP verified successfully");
 
     await transporter.sendMail({
       from,
