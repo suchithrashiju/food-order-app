@@ -30,6 +30,10 @@ A full-stack **Order Management** application for a food delivery platform. The 
 
 ![Checkout](docs/screenshots/checkout.png)
 
+### Order Success
+
+![Order Success](docs/screenshots/order-success.png)
+
 ### Order Tracking
 
 ![Tracking](docs/screenshots/tracking.png)
@@ -45,6 +49,10 @@ A full-stack **Order Management** application for a food delivery platform. The 
 ### Menu Management
 
 ![Menu](docs/screenshots/menu.png)
+
+### Admin Order Details
+
+![Admin Order Details](docs/screenshots/admin-order-details.png)
 
 ---
 
