@@ -200,6 +200,14 @@ test('PATCH /api/admin/orders/:id/status requires auth, remarks, and blocks inva
 
   assert.match(missingRemarks.body.message, /remarks/i);
 
+  const sameStatus = await request(app)
+    .patch(`/api/admin/orders/${placed.id}/status`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({ status: 'Order Received', remarks: 'Same as current' })
+    .expect(400);
+
+  assert.match(sameStatus.body.message, /already/i);
+
   await request(app)
     .patch(`/api/admin/orders/${placed.id}/status`)
     .set('Authorization', `Bearer ${token}`)
@@ -213,6 +221,14 @@ test('PATCH /api/admin/orders/:id/status requires auth, remarks, and blocks inva
     .expect(400);
 
   assert.match(afterDelivered.body.message, /delivered/i);
+
+  const sameDelivered = await request(app)
+    .patch(`/api/admin/orders/${placed.id}/status`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({ status: 'Delivered', remarks: 'Try again' })
+    .expect(400);
+
+  assert.match(sameDelivered.body.message, /already|cannot be (updated|changed)/i);
 });
 
 test('GET /api/admin/orders lists orders for authenticated admin', async () => {

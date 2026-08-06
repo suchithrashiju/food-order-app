@@ -85,7 +85,9 @@ export function AdminOrderDetailPage() {
 
   function openUpdateModal() {
     if (!order || !canManage) return
-    setSelectedStatus(order.status)
+    const nextStatus =
+      ORDER_PROGRESS_STATUSES.find((status) => status !== order.status) ?? order.status
+    setSelectedStatus(nextStatus)
     setRemarks('')
     setModalMode('update')
   }
@@ -308,15 +310,17 @@ export function AdminOrderDetailPage() {
               <Label htmlFor="order-status">Status</Label>
               <select
                 id="order-status"
-                value={currentStatus ?? order.status}
+                value={currentStatus ?? ''}
                 onChange={(event) => setSelectedStatus(event.target.value as OrderStatus)}
                 className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
               >
-                {ORDER_PROGRESS_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
+                {ORDER_PROGRESS_STATUSES.filter((status) => status !== order.status).map(
+                  (status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
             <div className="space-y-1.5">

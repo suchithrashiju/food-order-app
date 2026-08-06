@@ -62,6 +62,20 @@ function createHistoryEntry(
   return entry;
 }
 
+function assertCanUpdateStatus(current: OrderStatus, next: OrderStatus): void {
+  if (current === 'Cancelled') {
+    throw badRequest('Cancelled orders cannot be updated');
+  }
+
+  if (current === next) {
+    throw badRequest(`Order is already "${current}"`);
+  }
+
+  if (current === 'Delivered') {
+    throw badRequest('Delivered orders cannot be changed');
+  }
+}
+
 export class OrderService {
   private readonly inMemoryOrders: InMemoryOrder[] = [];
 
@@ -203,15 +217,7 @@ export class OrderService {
       if (!order) {
         throw notFound('Order not found');
       }
-      if (order.status === 'Cancelled') {
-        throw badRequest('Cancelled orders cannot be updated');
-      }
-      if (order.status === 'Delivered' && status !== 'Delivered') {
-        throw badRequest('Delivered orders cannot be changed');
-      }
-      if (status === 'Cancelled' && order.status === 'Delivered') {
-        throw badRequest('Delivered orders cannot be cancelled');
-      }
+      assertCanUpdateStatus(order.status, status);
       order.status = status;
       order.statusHistory = [...(order.statusHistory ?? []), historyEntry];
       order.updatedAt = new Date();
@@ -239,15 +245,7 @@ export class OrderService {
       throw notFound('Order not found');
     }
 
-    if (order.status === 'Cancelled') {
-      throw badRequest('Cancelled orders cannot be updated');
-    }
-    if (order.status === 'Delivered' && status !== 'Delivered') {
-      throw badRequest('Delivered orders cannot be changed');
-    }
-    if (status === 'Cancelled' && order.status === 'Delivered') {
-      throw badRequest('Delivered orders cannot be cancelled');
-    }
+    assertCanUpdateStatus(order.status, status);
 
     order.status = status;
     if (!order.statusHistory) {
