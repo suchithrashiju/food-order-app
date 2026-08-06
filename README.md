@@ -243,7 +243,7 @@ npm start
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD`   | Default admin credentials used for bootstrap                 |
 | `ADMIN_EMAIL`                         | Admin email used during seed                                 |
 | `ORDER_STATUS_SIMULATION`             | `true` = auto status + Socket push for demos; `false`/unset = admin-only updates |
-| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Ms between simulated steps (default `8000`; only used when simulation is on) |
+| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Ms between simulated steps (default `20000`; only used when simulation is on) |
 | `SEED_SECRET`                         | Optional; required to call `POST /api/admin/seed` when set   |
 | `SMTP_HOST` / `SMTP_PORT`             | Optional SMTP host and port for order emails                 |
 | `SMTP_USER` / `SMTP_PASSWORD`         | Optional SMTP credentials                                    |
@@ -320,7 +320,7 @@ Status changes are pushed to the track page over **Socket.IO** (with an 8s polli
 
 | `ORDER_STATUS_SIMULATION` | Behavior |
 | ------------------------- | -------- |
-| `true` / `1` | After place order, server auto-advances **Preparing → Out for Delivery → Delivered** every `ORDER_STATUS_SIMULATION_INTERVAL_MS` (default `8000`) and emits `order:status` on Socket.IO. Best for demos / Loom. |
+| `true` / `1` | After place order, server auto-advances **Preparing → Out for Delivery → Delivered** every `ORDER_STATUS_SIMULATION_INTERVAL_MS` (default `20000`) and emits `order:status` on Socket.IO. Best for demos / Loom. |
 | `false` / unset | No auto-advance. Status only changes when an admin uses **PATCH** `/api/admin/orders/:id/status`. Socket.IO still pushes those manual updates. Best for “real” admin-driven demos and keeps API tests deterministic. |
 
 Additional rules:
@@ -429,7 +429,7 @@ https://food-order-api-yo11.onrender.com
 | `ADMIN_JWT_SECRET` | Strong random secret                               |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | Bootstrap admin credentials |
 | `ORDER_STATUS_SIMULATION` | `true` for live demos (auto status); `false` for admin-only updates |
-| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Optional; default `8000` when simulation is on |
+| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Optional; default `20000` when simulation is on |
 | `SEED_SECRET`      | Recommended if the seed endpoint stays enabled     |
 | `SMTP_*`           | Optional; enable real order emails                 |
 
