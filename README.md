@@ -75,7 +75,7 @@ A full-stack **Order Management** application for a food delivery platform. The 
 
 | Area                     | Description                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------- |
-| **Menu**                 | Browse menu items with name, description, price, image, search, and category filters.             |
+| **Menu**                 | Home and Menu browse dishes by category (sticky tabs + sections), with search, sort, and price filters. |
 | **Cart**                 | Add, remove, and update item quantities with persistent cart storage using Local Storage.         |
 | **Checkout**             | Submit delivery details (name, optional email, phone, address, city, postal code) and place an order. |
 | **Order Tracking**       | Track order progress through **Order Received → Preparing → Out for Delivery → Delivered**, including **Cancelled**. |
@@ -236,8 +236,8 @@ npm start
 | `ADMIN_JWT_EXPIRES_IN_SECONDS`        | Token lifetime (default `28800`)                             |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD`   | Default admin credentials used for bootstrap                 |
 | `ADMIN_EMAIL`                         | Admin email used during seed                                 |
-| `ORDER_STATUS_SIMULATION`             | Auto-advance order status for demos (`true` / `false`)       |
-| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Interval between simulated status transitions                |
+| `ORDER_STATUS_SIMULATION`             | `true` = auto status + Socket push for demos; `false`/unset = admin-only updates |
+| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Ms between simulated steps (default `8000`; only used when simulation is on) |
 | `SEED_SECRET`                         | Optional; required to call `POST /api/admin/seed` when set   |
 | `SMTP_HOST` / `SMTP_PORT`             | Optional SMTP host and port for order emails                 |
 | `SMTP_USER` / `SMTP_PASSWORD`         | Optional SMTP credentials                                    |
@@ -308,7 +308,21 @@ Delivered
         └──► Cancelled (admin can cancel before Delivered)
 ```
 
-The backend can automatically simulate the happy-path status changes using configurable timers. Administrators can also update or cancel orders manually from the dashboard.
+### Real-time updates + status simulation
+
+Status changes are pushed to the track page over **Socket.IO** (with an 8s polling fallback). Auto-progression of orders is controlled by an env flag — not hard-coded:
+
+| `ORDER_STATUS_SIMULATION` | Behavior |
+| ------------------------- | -------- |
+| `true` / `1` | After place order, server auto-advances **Preparing → Out for Delivery → Delivered** every `ORDER_STATUS_SIMULATION_INTERVAL_MS` (default `8000`) and emits `order:status` on Socket.IO. Best for demos / Loom. |
+| `false` / unset | No auto-advance. Status only changes when an admin uses **PATCH** `/api/admin/orders/:id/status`. Socket.IO still pushes those manual updates. Best for “real” admin-driven demos and keeps API tests deterministic. |
+
+Additional rules:
+
+1. Customer places an order → status starts as **Order Received**.
+2. If simulation is on, timers schedule the happy path and emit to rooms `order:{id}` and `order:{FO-reference}`.
+3. Any **admin** status update (including cancel) **cancels** the simulator for that order so paths do not race.
+4. Track page joins the Socket.IO room; if the socket is down, it still refreshes via polling.
 
 ---
 
@@ -408,7 +422,8 @@ https://food-order-api-yo11.onrender.com
 | `CORS_ORIGIN`      | Exact frontend URL (Vercel app origin)             |
 | `ADMIN_JWT_SECRET` | Strong random secret                               |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | Bootstrap admin credentials |
-| `ORDER_STATUS_SIMULATION` | Optional; useful for live demos              |
+| `ORDER_STATUS_SIMULATION` | `true` for live demos (auto status); `false` for admin-only updates |
+| `ORDER_STATUS_SIMULATION_INTERVAL_MS` | Optional; default `8000` when simulation is on |
 | `SEED_SECRET`      | Recommended if the seed endpoint stays enabled     |
 | `SMTP_*`           | Optional; enable real order emails                 |
 
