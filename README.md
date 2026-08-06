@@ -50,6 +50,14 @@ A full-stack **Order Management** application for a food delivery platform. The 
 
 ![Menu](docs/screenshots/menu.png)
 
+### Add Menu Item
+
+![Add Menu Item](docs/screenshots/admin-add-item-filled.png)
+
+### Admin Orders
+
+![Admin Orders](docs/screenshots/admin-orders.png)
+
 ### Admin Order Details
 
 ![Admin Order Details](docs/screenshots/admin-order-details.png)
@@ -142,8 +150,6 @@ food-order-app/
 ---
 
 ## Architecture
-
-![Architecture](docs/screenshots/architecture.png)
 
 ```text
 Browser

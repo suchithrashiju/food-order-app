@@ -5,7 +5,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Classic Burger',
     description: 'Juicy beef burger with lettuce, tomato, cheese, and house sauce.',
-    price: 12.5,
+    price: 129,
     category: 'Burgers',
     imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -15,7 +15,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Double Cheese Burger',
     description: 'Two beef patties, melted cheddar, pickles, and special sauce.',
-    price: 15.5,
+    price: 179,
     category: 'Burgers',
     imageUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -25,7 +25,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Spicy Chicken Burger',
     description: 'Crispy chicken fillet with spicy mayo, lettuce, and jalapeños.',
-    price: 13.25,
+    price: 159,
     category: 'Burgers',
     imageUrl: 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -35,7 +35,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Mushroom Swiss Burger',
     description: 'Beef patty topped with sautéed mushrooms and melted Swiss cheese.',
-    price: 14,
+    price: 169,
     category: 'Burgers',
     imageUrl: 'https://loremflickr.com/900/600/mushroom,burger',
     isAvailable: true,
@@ -46,7 +46,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Margherita Pizza',
     description: 'Traditional pizza with tomato sauce, mozzarella, and basil.',
-    price: 14,
+    price: 249,
     category: 'Pizza',
     imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -56,7 +56,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Pepperoni Pizza',
     description: 'Loaded with pepperoni, mozzarella, and a touch of oregano.',
-    price: 16,
+    price: 329,
     category: 'Pizza',
     imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -66,7 +66,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Veggie Supreme Pizza',
     description: 'Bell peppers, olives, mushrooms, onions, and fresh mozzarella.',
-    price: 15,
+    price: 299,
     category: 'Pizza',
     imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -76,7 +76,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'BBQ Chicken Pizza',
     description: 'Smoky BBQ sauce, grilled chicken, red onion, and mozzarella.',
-    price: 16.5,
+    price: 349,
     category: 'Pizza',
     imageUrl: 'https://loremflickr.com/900/600/bbq,pizza',
     isAvailable: true,
@@ -87,7 +87,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Chicken Caesar Wrap',
     description: 'Grilled chicken wrapped with romaine, parmesan, and Caesar dressing.',
-    price: 10.75,
+    price: 179,
     category: 'Wraps',
     imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -97,7 +97,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Falafel Wrap',
     description: 'Crispy falafel, hummus, cucumber, tomato, and tahini sauce.',
-    price: 9.5,
+    price: 149,
     category: 'Wraps',
     imageUrl: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -107,7 +107,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Beef Shawarma Wrap',
     description: 'Spiced beef strips with garlic sauce, pickles, and fresh veggies.',
-    price: 11,
+    price: 199,
     category: 'Wraps',
     imageUrl: 'https://loremflickr.com/900/600/shawarma,wrap',
     isAvailable: true,
@@ -117,7 +117,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Paneer Tikka Wrap',
     description: 'Grilled paneer tikka with mint chutney and crunchy salad.',
-    price: 9.75,
+    price: 159,
     category: 'Wraps',
     imageUrl: 'https://loremflickr.com/900/600/paneer,wrap',
     isAvailable: true,
@@ -128,7 +128,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Spicy Chicken Fries',
     description: 'Crispy fries tossed in a spicy seasoning with chicken bites.',
-    price: 9.5,
+    price: 149,
     category: 'Sides',
     imageUrl: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -138,7 +138,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Onion Rings',
     description: 'Golden battered onion rings with a side of dip.',
-    price: 6.5,
+    price: 99,
     category: 'Sides',
     imageUrl: 'https://images.unsplash.com/photo-1639024471283-035266dcdb02?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -148,7 +148,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Loaded Cheese Fries',
     description: 'Crispy fries smothered in melted cheese and crispy bacon bits.',
-    price: 8,
+    price: 159,
     category: 'Sides',
     imageUrl: 'https://loremflickr.com/900/600/cheese,fries',
     isAvailable: true,
@@ -158,7 +158,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Mozzarella Sticks',
     description: 'Breaded mozzarella sticks fried golden, served with marinara.',
-    price: 7.5,
+    price: 179,
     category: 'Sides',
     imageUrl: 'https://loremflickr.com/900/600/mozzarella,sticks',
     isAvailable: true,
@@ -169,7 +169,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Veggie Salad',
     description: 'Fresh salad with mixed greens, avocado, and roasted vegetables.',
-    price: 8.25,
+    price: 149,
     category: 'Salads',
     imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -179,7 +179,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Greek Salad',
     description: 'Cucumber, tomato, olives, feta, and oregano vinaigrette.',
-    price: 9,
+    price: 179,
     category: 'Salads',
     imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -189,7 +189,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Grilled Chicken Salad',
     description: 'Grilled chicken breast over mixed greens with balsamic dressing.',
-    price: 10.5,
+    price: 219,
     category: 'Salads',
     imageUrl: 'https://loremflickr.com/900/600/chicken,salad',
     isAvailable: true,
@@ -199,7 +199,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Caprese Salad',
     description: 'Fresh mozzarella, tomato, and basil drizzled with balsamic glaze.',
-    price: 9.5,
+    price: 199,
     category: 'Salads',
     imageUrl: 'https://loremflickr.com/900/600/caprese,salad',
     isAvailable: true,
@@ -210,7 +210,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Chicken Alfredo Pasta',
     description: 'Creamy pasta with grilled chicken and parmesan.',
-    price: 13.5,
+    price: 249,
     category: 'Pasta',
     imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -220,7 +220,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Penne Arrabbiata',
     description: 'Spicy tomato sauce with garlic, chili, and fresh herbs.',
-    price: 11.5,
+    price: 199,
     category: 'Pasta',
     imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -230,7 +230,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Spaghetti Carbonara',
     description: 'Classic carbonara with egg, pancetta, parmesan, and black pepper.',
-    price: 13,
+    price: 229,
     category: 'Pasta',
     imageUrl: 'https://loremflickr.com/900/600/carbonara,pasta',
     isAvailable: true,
@@ -240,7 +240,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Lasagna Bolognese',
     description: 'Layered pasta with rich meat sauce, béchamel, and melted cheese.',
-    price: 14.5,
+    price: 269,
     category: 'Pasta',
     imageUrl: 'https://loremflickr.com/900/600/lasagna,pasta',
     isAvailable: true,
@@ -251,7 +251,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'BBQ Chicken Sandwich',
     description: 'Tender chicken with smoky BBQ sauce and slaw.',
-    price: 11.25,
+    price: 179,
     category: 'Sandwiches',
     imageUrl: 'https://images.unsplash.com/photo-1586190848861-0e6b0567d8d7?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -261,7 +261,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Club Sandwich',
     description: 'Triple-decker with chicken, egg, lettuce, tomato, and mayo.',
-    price: 10.5,
+    price: 169,
     category: 'Sandwiches',
     imageUrl: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -271,7 +271,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Grilled Cheese Sandwich',
     description: 'Melted cheddar and mozzarella between buttery toasted bread.',
-    price: 7.5,
+    price: 129,
     category: 'Sandwiches',
     imageUrl: 'https://loremflickr.com/900/600/grilledcheese,sandwich',
     isAvailable: true,
@@ -281,7 +281,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Tuna Melt Sandwich',
     description: 'Creamy tuna salad with melted cheese on toasted bread.',
-    price: 9,
+    price: 189,
     category: 'Sandwiches',
     imageUrl: 'https://loremflickr.com/900/600/tuna,sandwich',
     isAvailable: true,
@@ -292,7 +292,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Chocolate Lava Cake',
     description: 'Warm chocolate cake with a molten center and rich cocoa flavor.',
-    price: 6.75,
+    price: 149,
     category: 'Desserts',
     imageUrl: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -302,7 +302,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'New York Cheesecake',
     description: 'Creamy cheesecake with a buttery biscuit base.',
-    price: 7.25,
+    price: 179,
     category: 'Desserts',
     imageUrl: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -312,7 +312,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Tiramisu',
     description: 'Layers of coffee-soaked sponge and mascarpone cream, dusted with cocoa.',
-    price: 7,
+    price: 199,
     category: 'Desserts',
     imageUrl: 'https://loremflickr.com/900/600/tiramisu,dessert',
     isAvailable: true,
@@ -322,7 +322,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Brownie Sundae',
     description: 'Warm chocolate brownie topped with vanilla ice cream and syrup.',
-    price: 6.5,
+    price: 159,
     category: 'Desserts',
     imageUrl: 'https://loremflickr.com/900/600/brownie,icecream',
     isAvailable: true,
@@ -333,7 +333,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Fresh Lemonade',
     description: 'Refreshing lemonade served chilled.',
-    price: 3.5,
+    price: 69,
     category: 'Drinks',
     imageUrl: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -343,7 +343,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Iced Coffee',
     description: 'Cold brew coffee over ice with a hint of sweetness.',
-    price: 4.25,
+    price: 89,
     category: 'Drinks',
     imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -353,7 +353,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Mango Smoothie',
     description: 'Blended ripe mango with yogurt and a splash of citrus.',
-    price: 5,
+    price: 119,
     category: 'Drinks',
     imageUrl: 'https://images.unsplash.com/photo-1623065422902-30a2d94befe2?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -363,7 +363,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Sparkling Soda',
     description: 'Chilled sparkling soda with a twist of lime.',
-    price: 3,
+    price: 59,
     category: 'Drinks',
     imageUrl: 'https://loremflickr.com/900/600/soda,drink',
     isAvailable: true,
@@ -374,7 +374,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Loaded Nachos',
     description: 'Crispy nachos topped with cheese, beans, salsa, and guac.',
-    price: 9,
+    price: 179,
     category: 'Appetizers',
     imageUrl: 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -384,7 +384,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Garlic Bread',
     description: 'Toasted bread with garlic butter and herbs.',
-    price: 5.5,
+    price: 99,
     category: 'Appetizers',
     imageUrl: 'https://images.unsplash.com/photo-1573140401552-3fab57d69628?auto=format&fit=crop&w=900&q=80',
     isAvailable: true,
@@ -394,7 +394,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Buffalo Wings',
     description: 'Crispy chicken wings tossed in spicy buffalo sauce.',
-    price: 10,
+    price: 219,
     category: 'Appetizers',
     imageUrl: 'https://loremflickr.com/900/600/buffalowings,chicken',
     isAvailable: true,
@@ -404,7 +404,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Stuffed Jalapeños',
     description: 'Jalapeño peppers stuffed with cream cheese and lightly fried.',
-    price: 8,
+    price: 169,
     category: 'Appetizers',
     imageUrl: 'https://loremflickr.com/900/600/jalapeno,appetizer',
     isAvailable: true,
@@ -415,7 +415,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Classic Pancakes',
     description: 'Fluffy pancakes served with maple syrup and butter.',
-    price: 7.5,
+    price: 139,
     category: 'Breakfast',
     imageUrl: 'https://loremflickr.com/900/600/pancakes,breakfast',
     isAvailable: true,
@@ -425,7 +425,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Veggie Omelette',
     description: 'Fluffy eggs folded with bell peppers, onions, and cheese.',
-    price: 8,
+    price: 129,
     category: 'Breakfast',
     imageUrl: 'https://loremflickr.com/900/600/omelette,eggs',
     isAvailable: true,
@@ -435,7 +435,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Avocado Toast',
     description: 'Smashed avocado on sourdough with chili flakes and lemon.',
-    price: 8.5,
+    price: 179,
     category: 'Breakfast',
     imageUrl: 'https://loremflickr.com/900/600/avocado,toast',
     isAvailable: true,
@@ -445,7 +445,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'French Toast',
     description: 'Golden brioche French toast with berries and syrup.',
-    price: 8.25,
+    price: 149,
     category: 'Breakfast',
     imageUrl: 'https://loremflickr.com/900/600/frenchtoast,breakfast',
     isAvailable: true,
@@ -456,7 +456,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Grilled Salmon',
     description: 'Pan-seared salmon fillet with lemon butter sauce.',
-    price: 18.5,
+    price: 449,
     category: 'Seafood',
     imageUrl: 'https://loremflickr.com/900/600/salmon,grilled',
     isAvailable: true,
@@ -466,7 +466,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Shrimp Scampi',
     description: 'Sautéed shrimp in garlic butter white wine sauce over pasta.',
-    price: 16.5,
+    price: 399,
     category: 'Seafood',
     imageUrl: 'https://loremflickr.com/900/600/shrimp,pasta',
     isAvailable: true,
@@ -476,7 +476,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Fish and Chips',
     description: 'Crispy battered fish served with fries and tartar sauce.',
-    price: 14.5,
+    price: 299,
     category: 'Seafood',
     imageUrl: 'https://loremflickr.com/900/600/fish,chips',
     isAvailable: true,
@@ -486,7 +486,7 @@ export const SEED_MENU_ITEMS: ReadonlyArray<IMenuItemBase> = [
   {
     name: 'Calamari Rings',
     description: 'Crispy fried calamari served with marinara dipping sauce.',
-    price: 11,
+    price: 269,
     category: 'Seafood',
     imageUrl: 'https://loremflickr.com/900/600/calamari,seafood',
     isAvailable: true,
